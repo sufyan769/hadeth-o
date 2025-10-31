@@ -1,106 +1,65 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
 <title>البحث في الأحاديث</title>
 
-<!-- Algolia CDN -->
-<script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.22.1/dist/algoliasearch-lite.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  direction: rtl;
-  background: #f5f5f5;
-  margin: 0;
-}
-
-.container {
-  width: 90%;
-  max-width: 800px;
-  margin: auto;
-  padding-top: 30px;
-}
-
-input {
-  width: 100%;
-  padding: 14px;
-  font-size: 18px;
-  border: 2px solid #999;
-  border-radius: 8px;
-  outline: none;
-  margin-bottom: 15px;
-}
-
-.card {
-  background: white;
-  padding: 15px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  box-shadow: 0 0 5px rgba(0,0,0,0.1);
-}
-
-.card:hover {
-  background: #f1f1f1;
-}
+ body { font-family: Arial, sans-serif; direction: rtl; background:#fafafa; padding:30px; }
+ input { width:100%; padding:15px; font-size:20px; border-radius:6px; border:1px solid #ccc; }
+ .result { background:white; padding:15px; margin-top:10px; border-radius:6px; }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <input id="searchBox" placeholder="ابحث عن حديث..." autofocus>
-  <div id="results"></div>
-</div>
+<input id="searchBox" placeholder="ابحث هنا...">
+
+<div id="results"></div>
+<div id="debug" style="margin-top:20px; color:red;"></div>
 
 <script>
-const APP_ID = "3XD12I7386";
-const SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";
+const APP_ID     = "3XD12I7386";
+const SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";   // فقط للبحث (آمن)
 const INDEX_NAME = "hadeth-2";
-const ORDS_URL = "https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_combined/";
 
+// ✅ اتصال Algolia
 const client = algoliasearch(APP_ID, SEARCH_KEY);
-const index = client.initIndex(INDEX_NAME);
+const index  = client.initIndex(INDEX_NAME);
 
+// ✅ عند الكتابة في البحث
 document.getElementById("searchBox").addEventListener("input", async (e) => {
-  const q = e.target.value.trim();
-  if (!q) {
-    document.getElementById("results").innerHTML = "";
-    return;
-  }
+    const q = e.target.value.trim();
+    let resultsDiv = document.getElementById("results");
+    let debug = document.getElementById("debug");
 
-  const algoliaRes = await index.search(q);
-  let html = "";
+    resultsDiv.innerHTML = "";
+    debug.innerHTML = "";
 
-  algoliaRes.hits.forEach(hit => {
-    html += `
-      <div class="card" onclick="openHadith(${hit.id})">
-        <b>${hit.text}</b>
-      </div>
-    `;
-  });
+    if (q === "") return;
 
-  document.getElementById("results").innerHTML = html;
+    try {
+        const res = await index.search(q);
+
+        if (res.hits.length === 0) {
+            resultsDiv.innerHTML = "<p>لا توجد نتائج</p>";
+            return;
+        }
+
+        res.hits.forEach(h => {
+            resultsDiv.innerHTML += `
+                <div class="result">
+                    ${h.text}
+                </div>
+            `;
+        });
+
+    } catch (err) {
+        debug.innerHTML = "❌ خطأ: " + err;
+        console.error(err);
+    }
 });
-
-async function openHadith(id) {
-  const res = await fetch(ORDS_URL + id);
-  const json = await res.json();
-
-  if (!json.items || json.items.length === 0) {
-    alert("لا توجد تفاصيل للحديث.");
-    return;
-  }
-
-  const h = json.items[0];
-
-  alert(
-    "النص: \n" + h.TEXT +
-    "\n\nالشرح:\n" + (h.SHARH ?? "لا يوجد شرح") +
-    "\n\nالمصدر: " + (h.SOURCE ?? "")
-  );
-}
 </script>
 
 </body>
