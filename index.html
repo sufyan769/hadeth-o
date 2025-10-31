@@ -144,14 +144,11 @@ const search = async (params, from, size) => {
 
         return {
             total: { value: total, relation: 'eq' },
-            // The UI components use _id as a key, so we ensure it exists and is unique.
-            // We assume the new API returns an 'id' field. The old field was 'objectID'. We create a fallback for safety.
             hits: hits.map((hit, index) => ({ ...hit, _id: hit.id || hit.objectID || `${from}-${index}` })),
             suggest: null,
         };
     } catch (err) {
         console.error('Search error:', err);
-        // Provide a user-friendly error message.
         throw new Error(err.message.includes('فشل الطلب') ? err.message : 'حدث خطأ غير متوقع أثناء البحث. يرجى التحقق من الشبكة والمحاولة مرة أخرى.');
     }
 };
@@ -308,20 +305,22 @@ const ResultItem = ({ hit, onResultClick }) => {
     };
 
     const getTitle = () => {
-        const pageOrNum = hit.page_or_number ?? hit.page ?? hit.number;
-        const sourceText = (hit._highlightResult?.source?.value || hit.source || 'مصدر غير معروف');
+        const pageOrNum = hit.page_number ?? hit.page_or_number ?? hit.page ?? hit.number;
+        const sourceText = (hit.source || 'مصدر غير معروف');
         return pageOrNum ? `${sourceText} - ${pageOrNum}` : sourceText;
     };
     
     const getSnippet = () => {
         const h = hit._highlightResult;
         if (h) {
-            if (h.hadith?.value) return h.hadith.value;
+            if (h.text?.value) return h.text.value;
+            if (h.hadith?.value) return h.hadith.value; // Fallback
             if (h.sharh?.value) return `... ${h.sharh.value} ...`; 
         }
-        const text = hit.hadith || hit.sharh || '';
-        return text.length > 300 ? text.substring(0, 300) + '...' : text;
+        const content = hit.text || hit.hadith || hit.sharh || '';
+        return content.length > 300 ? content.substring(0, 300) + '...' : content;
     };
+
     const getDetails = (s) => {
         const parts = [];
         if (s.muhaddith && s.muhaddith === s.hukm) parts.push(`الحكم والمحدث: ${s.hukm}`);
@@ -392,7 +391,7 @@ const DetailRow = ({ label, value }) => {
     );
 };
 
-const BookView = ({ hits, currentIndex, onNavigate, onClose }) => {
+const BookView = ({ hits, currentIndex, onNavigate, onClose, onCategoryClick }) => {
     const currentHit = hits[currentIndex];
     const [fontSize, setFontSize] = useState(18);
     const [fullSharh, setFullSharh] = useState(null); 
@@ -428,7 +427,7 @@ const BookView = ({ hits, currentIndex, onNavigate, onClose }) => {
     }, [currentIndex]);
 
     const getTitle = (s) => {
-        const pageOrNum = s.page_or_number ?? s.page ?? s.number;
+        const pageOrNum = s.page_number ?? s.page_or_number ?? s.page ?? s.number;
         const sourceText = s.source || 'بدون عنوان';
         return pageOrNum ? `${sourceText} - ${pageOrNum}` : sourceText;
     };
@@ -444,8 +443,12 @@ const BookView = ({ hits, currentIndex, onNavigate, onClose }) => {
 
             return React.createElement('div', { className: "py-2 px-3 flex flex-wrap gap-x-4 bg-gray-50 even:bg-white border-b" },
                 React.createElement('dt', { className: "w-full sm:w-32 font-semibold text-gray-700 flex-shrink-0" }, "التصنيفات"),
-                React.createElement('dd', { className: "text-gray-800 flex-1" },
-                    items.map((item, index) => React.createElement('span', { key: index, className: "inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2" }, item))
+                React.createElement('dd', { className: "text-gray-800 flex-1 flex flex-wrap items-center gap-2" },
+                    items.map((item, index) => React.createElement('button', { 
+                        key: index, 
+                        onClick: () => onCategoryClick(item),
+                        className: "inline-block bg-brown-100 text-brown-800 rounded-full px-3 py-1 text-sm font-semibold hover:bg-brown-200 transition focus:outline-none focus:ring-2 focus:ring-brown-500"
+                    }, item))
                 )
             );
         } catch (e) {
@@ -471,12 +474,13 @@ const BookView = ({ hits, currentIndex, onNavigate, onClose }) => {
                 React.createElement('main', { className: "p-6 md:p-8" },
                     React.createElement('div', { className: "font-serif leading-loose whitespace-pre-wrap text-right", style: { fontSize: `${fontSize}px` }},
                         React.createElement('h2', { className: "text-xl font-bold text-brown-800 mb-3" }, "نص الحديث"),
-                        React.createElement('p', { className: "mb-6 bg-yellow-50 p-4 rounded-md", dangerouslySetInnerHTML: { __html: source.hadith } }),
+                        React.createElement('p', { className: "mb-6 bg-yellow-50 p-4 rounded-md", dangerouslySetInnerHTML: { __html: source.text || source.hadith } }),
                         React.createElement('h2', { className: "text-xl font-bold text-brown-800 mb-3" }, "الشرح"),
                         isSharhLoading ? React.createElement('div', { className: "text-center p-4 text-gray-500" }, "جاري تحميل الشرح...") : React.createElement('p', { className: "mb-6", dangerouslySetInnerHTML: { __html: fullSharh } }),
                         React.createElement('h2', { className: "text-xl font-bold text-brown-800 mb-3" }, "تفاصيل الحديث"),
                          React.createElement('dl', { className: "border rounded-md overflow-hidden" },
                             React.createElement(DetailRow, { label: "المصدر", value: source.source }),
+                             React.createElement(DetailRow, { label: "الصفحة/الرقم", value: source.page_number }),
                             React.createElement(DetailRow, { label: "الراوي", value: source.rawi }),
                             source.muhaddith && source.muhaddith === source.hukm ? 
                                 React.createElement(DetailRow, { label: "الحكم والمحدث", value: source.hukm })
@@ -571,8 +575,19 @@ const App = () => {
         setSelectedHitIndex(null);
     };
 
+    const handleCategoryClick = (category) => {
+        handleCloseBookView();
+        handleSearch({ query: category, type: SearchType.PHRASE, century: undefined });
+    };
+
     if (selectedHit && selectedHitIndex !== null && searchResults && searchResults.hits) {
-        return React.createElement(BookView, { hits: searchResults.hits, currentIndex: selectedHitIndex, onNavigate: handleBookViewNavigation, onClose: handleCloseBookView });
+        return React.createElement(BookView, { 
+            hits: searchResults.hits, 
+            currentIndex: selectedHitIndex, 
+            onNavigate: handleBookViewNavigation, 
+            onClose: handleCloseBookView,
+            onCategoryClick: handleCategoryClick
+        });
     }
 
     return (
