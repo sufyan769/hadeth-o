@@ -1,554 +1,235 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>باحث الأحاديث</title>
+    <title>الدرر السنية - عرض الأحاديث</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Cairo:wght@800&family=Tajawal:wght@400;500;700&display=swap');
       body {
-        font-family: 'Tajawal', sans-serif;
+        font-family: 'Noto Kufi Arabic', sans-serif;
       }
-      .font-cairo { font-family: 'Cairo', sans-serif; }
-      .font-amiri { font-family: 'Amiri', serif; }
-      .font-aref-ruqaa { font-family: 'Aref Ruqaa', serif; }
     </style>
-  <script type="importmap">
+    
+    <!-- React Import Map -->
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.4"
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
   }
 }
 </script>
+    
+    <!-- Babel Standalone for JSX compilation in browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-  <body class="bg-gray-50 text-gray-800">
+<body>
     <div id="root"></div>
-    <script type="module">
-      import React, { useState, useEffect, useMemo, StrictMode } from 'react';
-      import ReactDOM from 'react-dom/client';
-      import { HashRouter, Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 
-      // =================================================================
-      // === SERVICES
-      // =================================================================
-      
-      const API_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth';
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useCallback } from 'react';
+        import ReactDOM from 'react-dom/client';
 
-      // Helper to process API search results
-      const processApiResponse = (data) => {
-        if (!data || !data.items || !Array.isArray(data.items)) return [];
-        return data.items.map(item => ({
-            ...item,
-            id: item.hadeeth_id,
-            page_number: item.page_or_number,
-        }));
-      };
-      
-      const searchHadiths = async (query, searchType) => {
-        if (!query || !query.trim()) return [];
-        try {
-          let url;
-          const encodedQuery = encodeURIComponent(query);
-      
-          switch (searchType) {
-            case 'smart_text':
-              url = `${API_BASE_URL}/search_text/${encodedQuery}`;
-              break;
-            case 'combined':
-            default:
-              url = `${API_BASE_URL}/search_combined/${encodedQuery}`;
-              break;
-          }
-      
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`API search failed: ${response.statusText}`);
-          }
-          const json = await response.json();
-          return processApiResponse(json);
-        } catch (error) {
-          console.error("Error searching Hadiths:", error);
-          return [];
-        }
-      };
-
-      const getHadithById = async (id) => {
-        try {
-          // Assumes an endpoint like /ords/schema/module/id/{id}
-          const response = await fetch(`${API_BASE_URL}/id/${id}`);
-          if (!response.ok) {
-            throw new Error(`API fetch failed: ${response.statusText}`);
-          }
-          const json = await response.json();
-          // A single item from ORDS might be the object directly, or in items[0]
-          const hadithData = json.items && json.items.length > 0 ? json.items[0] : json;
-
-          if (!hadithData || !hadithData.hadeeth_id) {
-            console.error(`Hadith with ID ${id} not found or invalid data format.`);
-            return undefined;
-          }
-
-          return {
-              ...hadithData,
-              id: hadithData.hadeeth_id,
-              page_number: hadithData.page_or_number
-          };
-        } catch (error) {
-          console.error(`Error fetching Hadith by ID ${id}:`, error);
-          return undefined;
-        }
-      };
-
-      const getRandomHadiths = async (count) => {
-        try {
-          // Assumes an endpoint for random hadiths
-          const response = await fetch(`${API_BASE_URL}/random/${count}`);
-          if (!response.ok) {
-            throw new Error(`API random fetch failed: ${response.statusText}`);
-          }
-          const json = await response.json();
-          return processApiResponse(json);
-        } catch (error) {
-          console.error("Error fetching random Hadiths:", error);
-          return [];
-        }
-      };
-      
-      // =================================================================
-      // === HOOKS
-      // =================================================================
-      function useQuery() {
-        const { search } = useLocation();
-        return React.useMemo(() => new URLSearchParams(search), [search]);
-      }
-
-      // =================================================================
-      // === COMPONENTS
-      // =================================================================
-      const SVGProps = {
-        className: "w-5 h-5", viewBox: "0 0 24 24", fill: "none",
-        stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round",
-      };
-      const CopyIcon = ({ className, ...props }) => (
-        React.createElement('svg', {...SVGProps, ...props, className: `${SVGProps.className} ${className || ''}`.trim()}, 
-          React.createElement('rect', {x:"9", y:"9", width:"13", height:"13", rx:"2", ry:"2"}),
-          React.createElement('path', {d:"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"})
-        )
-      );
-      const CheckIcon = ({ className, ...props }) => (
-        React.createElement('svg', {...SVGProps, ...props, className: `w-5 h-5 text-green-500 ${className || ''}`.trim()}, 
-          React.createElement('polyline', {points:"20 6 9 17 4 12"})
-        )
-      );
-      const ShareIcon = ({ className, ...props }) => (
-        React.createElement('svg', {...SVGProps, ...props, className: `${SVGProps.className} ${className || ''}`.trim()},
-          React.createElement('circle', {cx:"18", cy:"5", r:"3"}),
-          React.createElement('circle', {cx:"6", cy:"12", r:"3"}),
-          React.createElement('circle', {cx:"18", cy:"19", r:"3"}),
-          React.createElement('line', {x1:"8.59", y1:"13.51", x2:"15.42", y2:"17.49"}),
-          React.createElement('line', {x1:"15.41", y1:"6.51", x2:"8.59", y2:"10.49"})
-        )
-      );
-      const FontSizeIncreaseIcon = ({ className, ...props }) => (
-        React.createElement('svg', {...SVGProps, ...props, className: `${SVGProps.className} ${className || ''}`.trim()},
-          React.createElement('path', {d:"M4 7V5h12v2M10 5v14m-3-3h6m5 0v-2h-3v-1h3v-2h-3v-1h2l-3-4-3 4h2v1h-3v2h3v1h-3v2h3"})
-        )
-      );
-      const FontSizeDecreaseIcon = ({ className, ...props }) => (
-        React.createElement('svg', {...SVGProps, ...props, className: `${SVGProps.className} ${className || ''}`.trim()},
-          React.createElement('path', {d:"M4 7V5h8v2M8 5v14m-3 3h6m7-3v-2h-3v-1h3v-2h-3v-1h2l-3-4-3 4h2v1h-3v2h3v1h-3v2h3"})
-        )
-      );
-      const BackIcon = ({ className, ...props }) => (
-        React.createElement('svg', {...SVGProps, ...props, className: `${SVGProps.className} ${className || ''}`.trim()},
-          React.createElement('path', {d:"M15 18l-6-6 6-6"})
-        )
-      );
-      const SearchIcon = ({ className, ...props }) => (
-          React.createElement('svg', {...SVGProps, ...props, className: `w-6 h-6 ${className || ''}`.trim()},
-              React.createElement('circle', {cx:"11", cy:"11", r:"8"}),
-              React.createElement('line', {x1:"21", y1:"21", x2:"16.65", y2:"16.65"})
-          )
-      );
-
-      const LoadingSpinner = () => (
-        React.createElement('div', { className: "flex justify-center items-center p-8" },
-          React.createElement('div', { className: "w-10 h-10 border-4 border-teal-600 border-dashed rounded-full animate-spin" })
-        )
-      );
-
-      const HadithTicker = () => {
-        const [hadiths, setHadiths] = useState([]);
-        const [currentIndex, setCurrentIndex] = useState(0);
-        const [isVisible, setIsVisible] = useState(true);
-
-        useEffect(() => {
-          const fetchHadiths = async () => {
-            const randomHadiths = await getRandomHadiths(5);
-            setHadiths(randomHadiths);
-          };
-          fetchHadiths();
-        }, []);
-
-        useEffect(() => {
-          if (hadiths.length === 0) return;
-          const intervalId = setInterval(() => {
-            setIsVisible(false);
-            setTimeout(() => {
-              setCurrentIndex((prevIndex) => (prevIndex + 1) % hadiths.length);
-              setIsVisible(true);
-            }, 500);
-          }, 6000);
-          return () => clearInterval(intervalId);
-        }, [hadiths.length]);
-
-        if (hadiths.length === 0) {
-          return React.createElement('div', { className: "h-16" });
-        }
-        const currentHadith = hadiths[currentIndex];
-        const text = currentHadith.text || '';
-
-        return React.createElement('div', { className: "text-center p-4 h-20" },
-          React.createElement('div', { className: `transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}` },
-            React.createElement('p', { className: "text-lg text-gray-700 leading-tight" }, text ? `"${text.split(' ').slice(0, 15).join(' ')}..."` : '[لا يوجد نص متوفر]'),
-            React.createElement('p', { className: "text-sm text-gray-500 mt-1" }, `- ${currentHadith.source}`)
-          )
-        );
-      };
-
-      const SearchBar = ({ onSearch, isLoading }) => {
-        const [query, setQuery] = useState('');
-        const [searchType, setSearchType] = useState('combined');
-
-        const searchOptions = [
-            { value: 'combined', label: 'بحث شامل', description: 'يبحث في جميع حقول الحديث (النص، الشرح، الراوي،...) ويعمل مع وبدون التشكيل.'},
-            { value: 'smart_text', label: 'بحث في متن الحديث', description: 'بحث دقيق في نص الحديث فقط ويتجاهل التشكيل.' },
+        // --- Constants ---
+        const API_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_combined/';
+        const HADITH_CATEGORIES = [
+          { key: 'prayer', name: 'الصلاة' },
+          { key: 'zakat', name: 'الزكاة' },
+          { key: 'fasting', name: 'الصيام' },
+          { key: 'hajj', name: 'الحج' },
+          { key: 'ethics', name: 'الأخلاق' },
+          { key: 'faith', name: 'الإيمان' },
+          { key: 'knowledge', name: 'العلم' },
         ];
-        
-        const selectedOption = useMemo(() => searchOptions.find(opt => opt.value === searchType), [searchType]);
+        const DORAR_URL_BASE = 'https://dorar.net/hadith/sharh/';
 
-        const handleSearch = (e) => {
-          e.preventDefault();
-          if (query.trim()) {
-             onSearch(query, searchType);
+        // --- API Service ---
+        const fetchHadiths = async (category) => {
+          try {
+            const response = await fetch(`${API_BASE_URL}${encodeURIComponent(category)}`);
+            if (!response.ok) {
+              throw new Error(`API call failed with status: ${response.status}`);
+            }
+            const data = await response.json();
+            return data.items || [];
+          } catch (error) {
+            console.error('Failed to fetch hadiths:', error);
+            return [];
           }
         };
 
-        return React.createElement('div', { className: "w-full max-w-3xl mx-auto bg-white p-4 rounded-xl shadow-lg" },
-          React.createElement('form', { onSubmit: handleSearch },
-            React.createElement('div', { className: "relative" },
-              React.createElement('input', {
-                type: "text", value: query, onChange: (e) => setQuery(e.target.value),
-                placeholder: "ابحث في الأحاديث...",
-                className: "w-full pl-12 pr-4 py-3 bg-gray-100 border-2 border-transparent focus:border-teal-500 focus:ring-teal-500 rounded-lg text-lg text-gray-800 transition",
-                disabled: isLoading
-              }),
-              React.createElement('div', { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" },
-                React.createElement(SearchIcon, null)
-              )
-            ),
-            React.createElement('div', { className: "mt-4 grid grid-cols-1" },
-                React.createElement('div', null,
-                    React.createElement('label', {htmlFor: "searchTypeSelect", className: "block text-sm font-medium text-gray-700 mb-1"}, "نوع البحث"),
-                    React.createElement('select', {
-                        id: "searchTypeSelect",
-                        value: searchType,
-                        onChange: (e) => setSearchType(e.target.value),
-                        className: "w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500",
-                        disabled: isLoading
-                    },
-                    searchOptions.map(option => React.createElement('option', {key: option.value, value: option.value}, option.label))
-                    ),
-                    selectedOption && React.createElement('p', {className: "text-xs text-gray-500 mt-2 h-10"}, selectedOption.description)
-                )
-            ),
-            React.createElement('button', {
-              type: "submit",
-              className: "mt-4 w-full bg-teal-600 text-white py-3 rounded-lg text-lg font-bold hover:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-300 transition-colors duration-300 disabled:bg-teal-400 disabled:cursor-not-allowed",
-              disabled: isLoading
-            }, isLoading ? 'جاري البحث...' : 'بحث')
-          )
-        );
-      };
+        // --- Components ---
 
-      const HadithCard = ({ hadith, query, resultIds }) => {
-        const text = hadith.text || '';
-        const snippet = text.length > 120 ? `${text.substring(0, 120)}...` : text;
-
-        return React.createElement(Link, {
-            to: `/hadith/${hadith.id}?q=${encodeURIComponent(query)}`,
-            state: { searchResultIds: resultIds },
-            className: "block py-5 px-4 hover:bg-gray-100 transition duration-150"
-          },
-          React.createElement('p', { className: "text-lg text-gray-800 leading-relaxed mb-3" },
-            snippet || '[لا يوجد نص متوفر]',
-            text.length > 120 && React.createElement('span', { className: "text-teal-600 hover:text-teal-800 font-semibold mr-2" }, " أكمل القراءة")
-          ),
-          React.createElement('div', { className: "flex items-center text-sm text-gray-500" },
-            React.createElement('span', null, `الراوي: ${hadith.rawi}`),
-            React.createElement('span', { className: "mx-2 text-gray-300" }, '•'),
-            React.createElement('span', null, `المصدر: ${hadith.source}`)
-          )
-        );
-      };
-
-      // =================================================================
-      // === PAGES
-      // =================================================================
-      const HomePage = () => {
-        const [searchResults, setSearchResults] = useState([]);
-        const [selectedHadiths, setSelectedHadiths] = useState([]);
-        const [isLoading, setIsLoading] = useState(false);
-        const [query, setQuery] = useState('');
-        const [hasSearched, setHasSearched] = useState(false);
-
-        useEffect(() => {
-          const fetchInitialHadiths = async () => {
-            setIsLoading(true);
-            const randomHadiths = await getRandomHadiths(3);
-            setSelectedHadiths(randomHadiths);
-            setIsLoading(false);
-          };
-          fetchInitialHadiths();
-        }, []);
-
-        const handleSearch = async (searchQuery, searchType) => {
-          setIsLoading(true);
-          setHasSearched(true);
-          setQuery(searchQuery);
-          const results = await searchHadiths(searchQuery, searchType);
-          setSearchResults(results);
-          setIsLoading(false);
-        };
-        
-        const resultIds = searchResults.map(h => h.id);
-        const selectedIds = selectedHadiths.map(h => h.id);
-
-        const renderHadithList = (hadiths, ids, currentQuery) => (
-          React.createElement('div', { className: "bg-white rounded-lg shadow-md divide-y divide-gray-200" },
-            hadiths.map((hadith) => React.createElement(HadithCard, { key: `${hadith.id}-${hadith.source}`, hadith: hadith, query: currentQuery, resultIds: ids }))
-          )
-        );
-
-        return React.createElement('div', { className: "min-h-screen" },
-          React.createElement('main', { className: "container mx-auto p-4 sm:p-6 lg:p-8" },
-            React.createElement('header', { className: "text-center mb-6" },
-              React.createElement('h1', { className: "text-4xl sm:text-5xl font-bold text-teal-800" }, 'باحث الأحاديث الشريفة'),
-              React.createElement('p', { className: "text-lg text-gray-600 mt-2" }, 'ابحث في كنوز السنة النبوية')
-            ),
-            React.createElement(HadithTicker, null),
-            React.createElement('div', { className: "sticky top-4 z-10 py-2 bg-gray-50 bg-opacity-80 backdrop-blur-sm" },
-              React.createElement(SearchBar, { onSearch: handleSearch, isLoading: isLoading })
-            ),
-            React.createElement('div', { className: "mt-8" },
-              isLoading ? React.createElement(LoadingSpinner, null)
-              : hasSearched ? React.createElement('div', null,
-                React.createElement('h2', { className: "text-2xl font-bold mb-4 text-gray-700" }, `نتائج البحث عن "${query}" (${searchResults.length})`),
-                searchResults.length > 0
-                  ? renderHadithList(searchResults, resultIds, query)
-                  : React.createElement('div', { className: "text-center bg-white p-8 rounded-lg shadow-md" },
-                      React.createElement('p', { className: "text-xl text-gray-600" }, 'لا توجد نتائج. حاول البحث بكلمات مختلفة.')
-                    )
-              )
-              : React.createElement('div', null,
-                React.createElement('h2', { className: "text-2xl font-bold mb-4 text-gray-700" }, 'أحاديث مختارة'),
-                renderHadithList(selectedHadiths, selectedIds, '')
-              )
-            )
-          )
-        );
-      };
-
-      const normalizeArabic = (text) => {
-        if (!text) return '';
-        return text
-            .replace(/[\\u064B-\\u0652]/g, '') // Tashkeel
-            .replace(/[أإآ]/g, 'ا')
-            .replace(/ى/g, 'ي')
-            .replace(/ة/g, 'ه');
-      };
-      
-      const HighlightedText = ({ text, highlight }) => {
-        if (!highlight || !text || highlight.trim() === '') {
-          return React.createElement(React.Fragment, null, text);
-        }
-        // For boolean search, highlight individual words
-        const highlightWords = highlight.replace(/[+-]/g, ' ').split(' ').filter(w => w);
-        const regex = new RegExp(`(${highlightWords.join('|')})`, 'gi');
-        const parts = text.split(regex);
-
-        return React.createElement('span', null,
-          parts.map((part, i) => {
-            const isMatch = highlightWords.some(hWord => normalizeArabic(part.toLowerCase()) === normalizeArabic(hWord.toLowerCase()));
-            return isMatch
-              ? React.createElement('mark', { key: i, className: "bg-yellow-300 px-1 rounded" }, part)
-              : part;
-          })
-        );
-      };
-      
-      const fontClassNames = ['text-lg', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl'];
-
-      const HadithDetailPage = () => {
-        const { id } = useParams();
-        const navigate = useNavigate();
-        const location = useLocation();
-        const query = useQuery();
-
-        const [hadith, setHadith] = useState(null);
-        const [isLoading, setIsLoading] = useState(true);
-        const [isCopied, setIsCopied] = useState(false);
-        const [fontSizeIndex, setFontSizeIndex] = useState(2); // Corresponds to 'text-2xl'
-
-        const searchQuery = useMemo(() => query.get('q') || '', [query]);
-        const searchResultIds = location.state?.searchResultIds;
-
-        useEffect(() => {
-          const fetchHadith = async () => {
-            if (!id) return;
-            setIsLoading(true);
-            const data = await getHadithById(id);
-            setHadith(data || null);
-            setIsLoading(false);
-            window.scrollTo(0, 0);
-          };
-          fetchHadith();
-        }, [id]);
-
-        const handleCopy = () => {
-          if (hadith) {
-            const hadithText = hadith.text || '[نص الحديث غير متوفر]';
-            const sharhText = hadith.sharh || '';
-            const textToCopy = `الحديث: ${hadithText}\n\n${sharhText ? `الشرح: ${sharhText}\n\n` : ''}المصدر: ${hadith.source}\nالرابط: ${window.location.href}`;
-            navigator.clipboard.writeText(textToCopy);
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
+        const HadithDisplay = ({ hadith, isVisible }) => {
+          if (!hadith) {
+            return (
+              <div className="min-h-[150px] flex items-center justify-center"></div>
+            );
           }
+
+          const truncateText = (text, maxLength = 120) => {
+            if (text.length <= maxLength) return text;
+            const lastSpace = text.lastIndexOf(' ', maxLength);
+            return text.substring(0, lastSpace > 0 ? lastSpace : maxLength) + '...';
+          };
+
+          const truncatedHadith = truncateText(hadith.hadeeth);
+
+          return (
+            <a
+              href={`${DORAR_URL_BASE}${hadith.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`block text-center p-8 bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 transition-opacity duration-1000 ease-in-out cursor-pointer hover:bg-white/20 min-h-[150px] flex items-center justify-center
+                ${isVisible ? 'opacity-100' : 'opacity-0'}
+              `}
+            >
+              <p className="text-xl md:text-2xl lg:text-3xl font-medium text-white leading-relaxed">
+                "{truncatedHadith}"
+              </p>
+            </a>
+          );
         };
 
-        const handleShare = async () => {
-          if (hadith) {
-            const hadithText = hadith.text || '';
-            const shareData = { title: `حديث: ${hadith.source}`, text: hadithText.substring(0, 100) + '...', url: window.location.href };
+        const CategorySelector = ({ selectedCategory, onSelectCategory }) => {
+          return (
+            <div className="flex flex-wrap justify-center gap-2 md:gap-4 my-8 px-4">
+              {HADITH_CATEGORIES.map((category) => (
+                <button
+                  key={category.key}
+                  onClick={() => onSelectCategory(category.name)}
+                  className={`px-4 py-2 text-sm md:text-base font-semibold rounded-full transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900
+                    ${selectedCategory === category.name
+                      ? 'bg-emerald-600 text-white shadow-lg ring-emerald-400'
+                      : 'bg-white/10 text-emerald-100 hover:bg-white/20 shadow-md ring-transparent'
+                    }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          );
+        };
+
+        // --- Main App Component ---
+
+        const App = () => {
+          const [selectedCategory, setSelectedCategory] = useState(HADITH_CATEGORIES[0].name);
+          const [hadiths, setHadiths] = useState([]);
+          const [currentHadith, setCurrentHadith] = useState(null);
+          const [isVisible, setIsVisible] = useState(false);
+          const [isLoading, setIsLoading] = useState(true);
+          const [error, setError] = useState(null);
+
+          const loadHadiths = useCallback(async (category) => {
+            setIsLoading(true);
+            setError(null);
+            setIsVisible(false);
             try {
-              if (navigator.share) {
-                  await navigator.share(shareData);
+              const fetchedHadiths = await fetchHadiths(category);
+              if (fetchedHadiths.length > 0) {
+                setHadiths(fetchedHadiths);
               } else {
-                  alert('المشاركة غير مدعومة في هذا المتصفح. يمكنك نسخ الرابط يدوياً.');
+                setHadiths([]);
+                setError('لم يتم العثور على أحاديث في هذا التصنيف.');
               }
             } catch (err) {
-              console.error('Error sharing:', err);
+              setError('حدث خطأ أثناء تحميل الأحاديث. يرجى المحاولة مرة أخرى.');
+              setHadiths([]);
+            } finally {
+              setIsLoading(false);
             }
-          }
+          }, []);
+
+          useEffect(() => {
+            loadHadiths(selectedCategory);
+          }, [selectedCategory]);
+
+          useEffect(() => {
+            if (hadiths.length === 0) {
+              setCurrentHadith(null);
+              return;
+            }
+
+            const firstHadith = hadiths[Math.floor(Math.random() * hadiths.length)];
+            setCurrentHadith(firstHadith);
+            const initialTimeout = setTimeout(() => setIsVisible(true), 100);
+
+            const intervalId = setInterval(() => {
+              setIsVisible(false);
+              
+              setTimeout(() => {
+                setCurrentHadith(prevHadith => {
+                  let nextHadith;
+                  if (hadiths.length === 1) return hadiths[0];
+                  do {
+                    nextHadith = hadiths[Math.floor(Math.random() * hadiths.length)];
+                  } while (nextHadith && prevHadith && nextHadith.id === prevHadith.id);
+                  return nextHadith;
+                });
+                setIsVisible(true);
+              }, 1000); 
+
+            }, 7000);
+
+            return () => {
+              clearTimeout(initialTimeout);
+              clearInterval(intervalId);
+            };
+          }, [hadiths]);
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 to-emerald-900 text-white p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center">
+              <main className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center flex-grow">
+                <header className="text-center mb-8">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2">الدرر السنية</h1>
+                  <p className="text-lg md:text-xl text-emerald-200">عرض الأحاديث النبوية الشريفة</p>
+                </header>
+
+                <section className="w-full">
+                  <h2 className="text-xl font-semibold text-center mb-4">التصنيف الموضوعي</h2>
+                  <CategorySelector
+                    selectedCategory={selectedCategory}
+                    onSelectCategory={setSelectedCategory}
+                  />
+                </section>
+                
+                <section className="w-full mt-8 px-2 sm:px-4">
+                  {isLoading ? (
+                    <div className="text-center text-xl text-emerald-300 min-h-[150px] flex items-center justify-center">جاري التحميل...</div>
+                  ) : error ? (
+                    <div className="text-center text-xl text-red-300 bg-red-900/50 p-4 rounded-lg min-h-[150px] flex items-center justify-center">{error}</div>
+                  ) : (
+                    <HadithDisplay hadith={currentHadith} isVisible={isVisible} />
+                  )}
+                </section>
+              </main>
+              <footer className="w-full text-center p-4 mt-8">
+                <p className="text-gray-400 text-sm">
+                  مستوحى من <a href="https://dorar.net" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">موقع الدرر السنية</a>
+                </p>
+              </footer>
+            </div>
+          );
         };
 
-        const changeFontSize = (direction) => {
-          if (direction === 'increase' && fontSizeIndex < fontClassNames.length - 1) {
-            setFontSizeIndex(fontSizeIndex + 1);
-          }
-          if (direction === 'decrease' && fontSizeIndex > 0) {
-            setFontSizeIndex(fontSizeIndex - 1);
-          }
-        };
+        // --- Mount the App ---
+        const rootElement = document.getElementById('root');
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
 
-        const currentIndex = useMemo(() => {
-          if (!searchResultIds || !id) return -1;
-          return searchResultIds.findIndex(resId => resId.toString() === id);
-        }, [searchResultIds, id]);
-
-        const navigateToResult = (direction) => {
-          if (!searchResultIds || currentIndex === -1) return;
-          const newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
-          if (newIndex >= 0 && newIndex < searchResultIds.length) {
-            const nextId = searchResultIds[newIndex];
-            navigate(`/hadith/${nextId}?q=${searchQuery}`, { state: { searchResultIds } });
-          }
-        };
-        
-        if (isLoading) {
-          return React.createElement('div', { className: "flex justify-center items-center min-h-screen" }, React.createElement(LoadingSpinner, null));
-        }
-        if (!hadith) {
-          return React.createElement('div', { className: "text-center p-8" }, 'لم يتم العثور على الحديث. ربما تمت إزالته أو أن الرابط غير صحيح.');
-        }
-        
-        const hasPrev = searchResultIds && currentIndex > 0;
-        const hasNext = searchResultIds && currentIndex !== -1 && currentIndex < searchResultIds.length - 1;
-
-        return React.createElement('div', { className: "max-w-4xl mx-auto p-4 sm:p-8" },
-          React.createElement('div', { className: "bg-white rounded-xl shadow-lg p-6 sm:p-10 relative" },
-             React.createElement('div', { className: "absolute top-4 left-4 sm:top-6 sm:left-6" },
-              React.createElement('button', { 
-                onClick: () => navigate(-1), 
-                className: "flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition", 
-                'aria-label': "العودة" 
-              }, React.createElement(BackIcon, null), 'الرجوع')
-            ),
-            React.createElement('div', { className: "mb-6 border-b pb-6" },
-              React.createElement('h2', { className: "text-xl font-bold text-teal-800 mb-4" }, 'نص الحديث'),
-              React.createElement('p', { className: `${fontClassNames[fontSizeIndex]} text-gray-800 leading-loose font-cairo font-extrabold` }, React.createElement(HighlightedText, { text: hadith.text, highlight: searchQuery }))
-            ),
-            hadith.sharh && hadith.sharh.trim() !== '' ?
-              React.createElement('div', { className: "mb-8" },
-                React.createElement('h2', { className: "text-xl font-bold text-teal-800 mb-4" }, 'الشرح'),
-                React.createElement('p', { className: "text-gray-700 leading-relaxed whitespace-pre-wrap font-amiri" }, React.createElement(HighlightedText, { text: hadith.sharh, highlight: searchQuery }))
-              ) :
-              React.createElement('div', { className: "mb-8" },
-                React.createElement('h2', { className: "text-xl font-bold text-teal-800 mb-4" }, 'الشرح'),
-                React.createElement('p', { className: "text-gray-600 italic" }, 'لا يوجد شرح متوفر لهذا الحديث.')
-              ),
-            React.createElement('div', { className: "border-t border-b py-4 my-6 text-gray-600 text-base font-aref-ruqaa" },
-              React.createElement('div', { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3" },
-                React.createElement('p', null, React.createElement('strong', { className: "font-semibold text-gray-800" }, 'الراوي:'), ` ${hadith.rawi}`),
-                React.createElement('p', null, React.createElement('strong', { className: "font-semibold text-gray-800" }, 'المحدث:'), ` ${hadith.muhaddith}`),
-                React.createElement('p', null, React.createElement('strong', { className: "font-semibold text-gray-800" }, 'المصدر:'), ` ${hadith.source}`),
-                React.createElement('p', null, React.createElement('strong', { className: "font-semibold text-gray-800" }, 'رقم/صفحة:'), ` ${hadith.page_number}`),
-                React.createElement('p', null, React.createElement('strong', { className: "font-semibold text-gray-800" }, 'الحكم:'), ` ${hadith.hukm}`),
-                React.createElement('p', { className: "sm:col-span-2" }, React.createElement('strong', { className: "font-semibold text-gray-800" }, 'التخريج:'), ` ${hadith.takhrij}`)
-              )
-            ),
-             hadith.categories && hadith.categories.length > 0 && React.createElement('div', { className: "mb-6" },
-              React.createElement('h3', { className: "font-bold text-lg mb-3 text-teal-800" }, 'التصنيفات:'),
-              React.createElement('div', { className: "flex flex-wrap gap-2" },
-                hadith.categories.map((category, index) =>
-                  React.createElement(Link, {
-                    key: index, to: `/?q=${encodeURIComponent(category.split(' - ')[0])}`,
-                    className: "bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm hover:bg-teal-200 transition"
-                  }, category)
-                )
-              )
-            ),
-            React.createElement('div', { className: "flex flex-wrap items-center justify-between gap-4 pt-6" },
-                React.createElement('div', {className: "flex items-center gap-2"},
-                    React.createElement('button', { onClick: handleCopy, className: "flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition" }, isCopied ? React.createElement(CheckIcon, null) : React.createElement(CopyIcon, null), isCopied ? 'تم النسخ' : 'نسخ'),
-                    React.createElement('button', { onClick: handleShare, className: "flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition" }, React.createElement(ShareIcon, null), 'مشاركة'),
-                    React.createElement('button', { onClick: () => changeFontSize('increase'), 'aria-label': "تكبير الخط", className: "p-2 rounded-lg hover:bg-gray-200 transition" }, React.createElement(FontSizeIncreaseIcon, null)),
-                    React.createElement('button', { onClick: () => changeFontSize('decrease'), 'aria-label': "تصغير الخط", className: "p-2 rounded-lg hover:bg-gray-200 transition" }, React.createElement(FontSizeDecreaseIcon, null))
-                ),
-                searchResultIds && searchResultIds.length > 0 && React.createElement('div', {className: "flex items-center gap-2"},
-                    React.createElement('button', { onClick: () => navigateToResult('prev'), disabled: !hasPrev, className: "bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 disabled:bg-teal-300 disabled:cursor-not-allowed transition" }, "السابق"),
-                    React.createElement('span', {className: "text-gray-600 font-mono"}, `${currentIndex + 1} / ${searchResultIds.length}`),
-                    React.createElement('button', { onClick: () => navigateToResult('next'), disabled: !hasNext, className: "bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 disabled:bg-teal-300 disabled:cursor-not-allowed transition" }, "التالي")
-                )
-            )
-          )
-        );
-      };
-
-      const App = () => (
-        React.createElement(HashRouter, null,
-          React.createElement(Routes, null,
-            React.createElement(Route, { path: "/", element: React.createElement(HomePage, null) }),
-            React.createElement(Route, { path: "/hadith/:id", element: React.createElement(HadithDetailPage, null) })
-          )
-        )
-      );
-
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(React.createElement(StrictMode, null, React.createElement(App, null)));
     </script>
-  </body>
+</body>
 </html>
