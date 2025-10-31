@@ -3,78 +3,43 @@
 <head>
 <meta charset="UTF-8" />
 <title>البحث في الأحاديث</title>
-
-<script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/algoliasearch/dist/algoliasearch-lite.umd.js"></script>
 
 <style>
-  body { font-family: Arial; text-align:center; padding:40px; background:#fafafa; }
-  #results { text-align: right; width: 70%; margin:auto; }
-
-  .hit {
-    padding: 15px;
-    margin: 10px 0;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 0 4px rgba(0,0,0,.1);
-    font-size: 20px;
-    line-height: 1.8;
-  }
-
-  .hit mark { background: yellow; }
-
-  .link {
-    display: inline-block;
-    margin-top: 5px;
-    color: #0057ff;
-    text-decoration: none;
-  }
+body { font-family: sans-serif; padding:20px; background:#f8f8f8 }
+input { width:100%; padding:15px; font-size:20px; border-radius:8px; border:1px solid #ccc; }
+.result { background:white; padding:15px; margin-top:12px; border-radius:10px; cursor:pointer; }
+.result:hover { background:#eef4ff; }
 </style>
-
 </head>
 <body>
 
-<h2>🔍 البحث في الأحاديث</h2>
-<div id="searchbox"></div>
-<br>
+<input id="searchBox" placeholder="اكتب كلمة للبحث..." />
+
 <div id="results"></div>
 
 <script>
-  const searchClient = algoliasearch(
-    "3XD12I7386",   // ✅ APP ID
-    "89e8e132a05fdb02275f64dec8d14d05" // ✅ Search API Key
-  );
+const APP_ID     = "3XD12I7386";
+const SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";
+const INDEX_NAME = "hadeth-2";
 
-  const search = instantsearch({
-    indexName: "hadeth-2",
-    searchClient,
-  });
+const client = algoliasearch(APP_ID, SEARCH_KEY);
+const index  = client.initIndex(INDEX_NAME);
 
-  search.addWidgets([
-    instantsearch.widgets.searchBox({
-      container: "#searchbox",
-      placeholder: "اكتب كلمة للبحث...",
-      autofocus: true,
-    }),
+document.getElementById("searchBox").addEventListener("input", async (e) => {
+    const keyword = e.target.value.trim();
+    const box = document.getElementById("results");
 
-    instantsearch.widgets.hits({
-      container: "#results",
-      templates: {
-        item(hit) {
-          return `
-            <div class="hit">
-              ${hit._highlightResult.text.value}
-              <br>
-              <a href="${hit.url}" target="_blank" class="link">فتح الحديث</a>
-            </div>
-          `;
-        }
-      }
-    }),
-  ]);
+    if (!keyword) return box.innerHTML = "";
 
-  search.start();
+    const res = await index.search(keyword, { hitsPerPage: 20 });
+
+    box.innerHTML = res.hits.map(hit => `
+        <div class="result" onclick="location.href='details.html?id=${hit.objectID}'">
+            ${hit.text}
+        </div>
+    `).join("");
+});
 </script>
-
 </body>
 </html>
