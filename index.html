@@ -102,31 +102,34 @@ const CloseIcon = ({ className = "w-6 h-6" }) => (
 // --- 3. خدمة البحث (services/searchService.js) ---
 const search = async (params, from, size) => {
     const { query, type, century } = params;
-    const API_ENDPOINT = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_combined/';
+    // The API endpoint, without trailing slash.
+    const API_ENDPOINT = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_combined';
 
-    const queryParams = new URLSearchParams();
-    
     let searchQuery = query;
-    // Phrase search is a common feature that many backends support with quotes.
     if (type === SearchType.PHRASE) {
         searchQuery = `"${query}"`;
     }
-    // For other types, we'll pass the query as is and rely on the backend's default behavior.
+
+    // The search term is now a path parameter.
+    const searchUrl = `${API_ENDPOINT}/${encodeURIComponent(searchQuery)}`;
     
-    queryParams.append('q', searchQuery);
-    queryParams.append('offset', String(from));
-    queryParams.append('limit', String(size));
+    // Pagination and other parameters are query parameters.
+    const queryParams = new URLSearchParams({
+        offset: String(from),
+        limit: String(size),
+    });
 
     if (century && type === SearchType.RANGE) {
-        // Assuming the API supports a 'century' parameter for filtering.
         queryParams.append('century', century);
     }
+    
+    const fullUrl = `${searchUrl}?${queryParams.toString()}`;
 
     try {
-        const response = await fetch(`${API_ENDPOINT}?${queryParams.toString()}`);
+        const response = await fetch(fullUrl);
         if (!response.ok) {
             const errorBody = await response.text();
-            console.error("API Error:", errorBody);
+            console.error("API Error Response:", errorBody);
             throw new Error(`فشل الطلب مع الحالة: ${response.status}`);
         }
         const data = await response.json();
