@@ -1,210 +1,273 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>محرك بحث الأحاديث الشريفة</title>
+    <title>الدرر السنية - عرض الأحاديث</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
       body {
-        font-family: 'Tajawal', sans-serif;
+        font-family: 'Noto Kufi Arabic', sans-serif;
       }
     </style>
-  <script type="importmap">
+    
+    <!-- React Import Map -->
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/"
   }
 }
 </script>
-</head>
-  <body>
-    <div id="root"></div>
-    <script type="module">
-import React, { useState, useCallback } from 'react';
-import ReactDOM from 'react-dom/client';
-
-// --- LoadingSpinner Component ---
-const LoadingSpinner = () => {
-  return (
-    <div className="flex justify-center items-center p-8">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-  );
-};
-
-// --- HadithCard Component ---
-const HadithCard = ({ hadith }) => {
-  return (
-    <div className="bg-white shadow-lg rounded-xl overflow-hidden transform hover:scale-[1.02] transition-transform duration-300">
-      <div className="p-6 border-r-8 border-blue-600">
-        <p className="text-xl text-blue-800 font-semibold mb-4 leading-relaxed">{hadith.TEXT}</p>
-        <div className="mt-6 pt-4 border-t border-gray-200 space-y-4">
-          {hadith.SHARH && (
-            <div>
-              <h3 className="text-md font-bold text-gray-700 mb-2">الشرح:</h3>
-              <p className="text-gray-600 text-sm leading-loose">{hadith.SHARH}</p>
-            </div>
-          )}
-          {hadith.TAKHRIJ && (
-            <div>
-              <h3 className="text-md font-bold text-gray-700 mb-2">التخريج:</h3>
-              <p className="text-gray-600 text-sm leading-loose">{hadith.TAKHRIJ}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
-// --- App Component ---
-const API_ENDPOINT = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_combined/';
-
-const App = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [results, setResults] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [hasSearched, setHasSearched] = useState(false);
-
-  const fetchHadithData = useCallback(async (query) => {
-    if (!query.trim()) {
-      setError('الرجاء إدخال كلمة للبحث.');
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    setHasSearched(true);
-    setResults([]);
-
-    try {
-      const encodedQuery = encodeURIComponent(query);
-      const response = await fetch(`${API_ENDPOINT}${encodedQuery}`);
-      
-      if (!response.ok) {
-        throw new Error(`خطأ في الشبكة: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.items && data.items.length > 0) {
-        setResults(data.items);
-      } else {
-        setResults([]);
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(`حدث خطأ أثناء جلب البيانات: ${err.message}`);
-      } else {
-        setError('حدث خطأ غير متوقع.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const handleSearch = () => {
-    fetchHadithData(searchTerm);
-  };
-
-  const handleKeyPress = (event) => {
-    if (event.key === 'Enter') {
-      handleSearch();
-    }
-  };
-  
-  const renderContent = () => {
-    if (isLoading) {
-      return <LoadingSpinner />;
-    }
-
-    if (error) {
-      return <p className="text-center text-red-500 bg-red-100 p-4 rounded-lg">{error}</p>;
-    }
     
-    if (hasSearched) {
-        if (results.length > 0) {
+    <!-- Babel Standalone for JSX compilation in browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useCallback } from 'react';
+        import ReactDOM from 'react-dom/client';
+
+        // --- Constants ---
+        const API_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_combined/';
+        const HADITH_CATEGORIES = [
+          { key: 'prayer', name: 'الصلاة' },
+          { key: 'zakat', name: 'الزكاة' },
+          { key: 'fasting', name: 'الصيام' },
+          { key: 'hajj', name: 'الحج' },
+          { key: 'ethics', name: 'الأخلاق' },
+          { key: 'faith', name: 'الإيمان' },
+          { key: 'knowledge', name: 'العلم' },
+        ];
+
+        // --- API Service ---
+        const fetchHadiths = async (query) => {
+          try {
+            const response = await fetch(`${API_BASE_URL}${encodeURIComponent(query)}`);
+            if (!response.ok) {
+              throw new Error(`API call failed with status: ${response.status}`);
+            }
+            const data = await response.json();
+            return data.items || [];
+          } catch (error) {
+            console.error('Failed to fetch hadiths:', error);
+            return [];
+          }
+        };
+
+        // --- Components ---
+
+        const HadithDisplay = ({ hadith, isVisible }) => {
+          if (!hadith) {
             return (
-                <div className="space-y-6">
-                    {results.map((hadith) => (
-                    <HadithCard key={hadith.ID} hadith={hadith} />
-                    ))}
-                </div>
+              <div className="min-h-[150px] flex items-center justify-center"></div>
             );
-        } else {
-            return <p className="text-center text-gray-500 bg-gray-100 p-4 rounded-lg">لم يتم العثور على نتائج مطابقة.</p>;
-        }
-    }
+          }
 
-    return (
-        <div className="text-center text-gray-500">
-            <p>أدخل كلمة أو جملة في شريط البحث للعثور على الأحاديث الشريفة.</p>
-        </div>
-    );
-  };
+          const truncateText = (text, maxLength = 120) => {
+            if (!text || text.length <= maxLength) return text;
+            const lastSpace = text.lastIndexOf(' ', maxLength);
+            return text.substring(0, lastSpace > 0 ? lastSpace : maxLength) + '...';
+          };
 
+          const truncatedHadith = truncateText(hadith.text);
 
-  return (
-    <div className="bg-gray-50 min-h-screen text-gray-800">
-      <main className="container mx-auto px-4 py-8 md:py-12">
-        <header className="text-center mb-10">
-          <h1 className="text-3xl md:text-5xl font-bold text-slate-800">
-            📚 محرك بحث الأحاديث الشريفة
-          </h1>
-          <p className="text-slate-600 mt-2 text-lg">
-            ابحث في نصوص الأحاديث وشروحها بسهولة
-          </p>
-        </header>
-
-        <div className="max-w-3xl mx-auto mb-10">
-          <div className="flex shadow-md rounded-lg overflow-hidden">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="أدخل كلمة البحث هنا..."
-              className="w-full px-5 py-3 text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
-            />
-            <button
-              onClick={handleSearch}
-              disabled={isLoading}
-              className="px-6 py-3 bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-blue-300"
+          return (
+            <div
+              className={`text-center p-8 bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 transition-opacity duration-1000 ease-in-out min-h-[150px] flex items-center justify-center
+                ${isVisible ? 'opacity-100' : 'opacity-0'}
+              `}
             >
-              {isLoading ? 'جار البحث...' : 'بحث'}
-            </button>
-          </div>
-        </div>
+              <p className="text-xl md:text-2xl lg:text-3xl font-medium text-white leading-relaxed">
+                "{truncatedHadith}"
+              </p>
+            </div>
+          );
+        };
+
+        const CategorySelector = ({ selectedCategory, onSelectCategory }) => {
+          return (
+            <div className="flex flex-wrap justify-center gap-2 md:gap-4 my-8 px-4">
+              {HADITH_CATEGORIES.map((category) => (
+                <button
+                  key={category.key}
+                  onClick={() => onSelectCategory(category.name)}
+                  className={`px-4 py-2 text-sm md:text-base font-semibold rounded-full transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900
+                    ${selectedCategory === category.name
+                      ? 'bg-emerald-600 text-white shadow-lg ring-emerald-400'
+                      : 'bg-white/10 text-emerald-100 hover:bg-white/20 shadow-md ring-transparent'
+                    }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          );
+        };
         
-        <div className="max-w-4xl mx-auto">
-          {renderContent()}
-        </div>
-      </main>
-    </div>
-  );
-};
+        const SearchBar = ({ onSearch }) => {
+            const [query, setQuery] = useState('');
 
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (query.trim()) {
+                    onSearch(query.trim());
+                }
+            };
 
-// --- React DOM Render ---
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
+            return (
+                <form onSubmit={handleSubmit} className="w-full max-w-lg mx-auto flex gap-2">
+                    <input
+                        type="search"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="ابحث عن حديث..."
+                        className="flex-grow bg-white/10 text-white placeholder-gray-400 rounded-lg px-4 py-2 border border-white/20 focus:ring-2 focus:ring-emerald-400 focus:outline-none transition-colors"
+                        aria-label="Search for a Hadith"
+                    />
+                    <button type="submit" className="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                        بحث
+                    </button>
+                </form>
+            );
+        };
 
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+        // --- Main App Component ---
+
+        const App = () => {
+          const [selectedCategory, setSelectedCategory] = useState(HADITH_CATEGORIES[0].name);
+          const [hadiths, setHadiths] = useState([]);
+          const [currentHadith, setCurrentHadith] = useState(null);
+          const [isVisible, setIsVisible] = useState(false);
+          const [isLoading, setIsLoading] = useState(true);
+          const [error, setError] = useState(null);
+
+          const loadHadiths = useCallback(async (query) => {
+            setIsLoading(true);
+            setError(null);
+            setIsVisible(false);
+            try {
+              const fetchedHadiths = await fetchHadiths(query);
+              if (fetchedHadiths.length > 0) {
+                setHadiths(fetchedHadiths);
+              } else {
+                setHadiths([]);
+                setError('لم يتم العثور على أحاديث تطابق بحثك.');
+              }
+            } catch (err) {
+              setError('حدث خطأ أثناء تحميل الأحاديث. يرجى المحاولة مرة أخرى.');
+              setHadiths([]);
+            } finally {
+              setIsLoading(false);
+            }
+          }, []);
+          
+          const handleSearch = (query) => {
+            setSelectedCategory(null); // Deselect category when searching
+            loadHadiths(query);
+          };
+
+          const handleCategorySelect = (categoryName) => {
+            setSelectedCategory(categoryName);
+            loadHadiths(categoryName);
+          };
+
+          useEffect(() => {
+            // Initial load
+            loadHadiths(selectedCategory);
+          }, []);
+
+          useEffect(() => {
+            if (hadiths.length === 0) {
+              setCurrentHadith(null);
+              return;
+            }
+
+            const firstHadith = hadiths[Math.floor(Math.random() * hadiths.length)];
+            setCurrentHadith(firstHadith);
+            const initialTimeout = setTimeout(() => setIsVisible(true), 100);
+
+            const intervalId = setInterval(() => {
+              setIsVisible(false);
+              
+              setTimeout(() => {
+                setCurrentHadith(prevHadith => {
+                  let nextHadith;
+                  if (hadiths.length === 1) return hadiths[0];
+                  do {
+                    nextHadith = hadiths[Math.floor(Math.random() * hadiths.length)];
+                  } while (nextHadith && prevHadith && nextHadith.id === prevHadith.id);
+                  return nextHadith;
+                });
+                setIsVisible(true);
+              }, 1000); 
+
+            }, 7000);
+
+            return () => {
+              clearTimeout(initialTimeout);
+              clearInterval(intervalId);
+            };
+          }, [hadiths]);
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 to-emerald-900 text-white p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center">
+              <main className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center flex-grow">
+                <header className="text-center mb-8">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2">الدرر السنية</h1>
+                  <p className="text-lg md:text-xl text-emerald-200">عرض الأحاديث النبوية الشريفة</p>
+                </header>
+
+                <section className="w-full mb-6">
+                    <h2 className="text-xl font-semibold text-center mb-4">ابحث في الأحاديث</h2>
+                    <SearchBar onSearch={handleSearch} />
+                </section>
+                
+                <section className="w-full">
+                  <h2 className="text-xl font-semibold text-center mb-4">أو اختر من التصنيف الموضوعي</h2>
+                  <CategorySelector
+                    selectedCategory={selectedCategory}
+                    onSelectCategory={handleCategorySelect}
+                  />
+                </section>
+                
+                <section className="w-full mt-8 px-2 sm:px-4">
+                  {isLoading ? (
+                    <div className="text-center text-xl text-emerald-300 min-h-[150px] flex items-center justify-center">جاري التحميل...</div>
+                  ) : error ? (
+                    <div className="text-center text-xl text-red-300 bg-red-900/50 p-4 rounded-lg min-h-[150px] flex items-center justify-center">{error}</div>
+                  ) : (
+                    <HadithDisplay hadith={currentHadith} isVisible={isVisible} />
+                  )}
+                </section>
+              </main>
+              <footer className="w-full text-center p-4 mt-8">
+                <p className="text-gray-400 text-sm">
+                  مستوحى من <a href="https://dorar.net" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">موقع الدرر السنية</a>
+                </p>
+              </footer>
+            </div>
+          );
+        };
+
+        // --- Mount the App ---
+        const rootElement = document.getElementById('root');
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
+
     </script>
-  </body>
+</body>
 </html>
