@@ -1,87 +1,119 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<title>تفاصيل الحديث</title>
-<style>
-    body { font-family: sans-serif; background:#fafafa; margin:0; padding:20px; }
-    .container { max-width:900px; margin:auto; background:white; padding:20px; border-radius:10px; }
-    .label { font-weight:bold; margin-top:15px; display:block; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تفاصيل الحديث</title>
+  <style>
+    body {
+      font-family: "Arial", sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 25px;
+      line-height: 1.9;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .label {
+      font-weight: bold;
+      color: #444;
+      margin-top: 15px;
+    }
+    .value {
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .btn {
+      display: inline-block;
+      background: #007bff;
+      padding: 10px 18px;
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+      margin-top: 15px;
+    }
+  </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 id="title">الحديث</h2>
+  <h1>الحديث</h1>
 
-    <span class="label">الحديث:</span>
-    <div id="text">⏳ تحميل...</div>
+  <div>
+    <div class="label">الحديث:</div>
+    <div id="text" class="value"></div>
 
-    <span class="label">الشرح:</span>
-    <div id="sharh">⏳ تحميل...</div>
+    <div class="label">الشرح:</div>
+    <div id="sharh" class="value"></div>
 
-    <span class="label">الراوي:</span>
-    <div id="rawi">⏳ تحميل...</div>
+    <div class="label">الراوي:</div>
+    <div id="rawi" class="value"></div>
 
-    <span class="label">المحدث:</span>
-    <div id="muhaddith">⏳ تحميل...</div>
+    <div class="label">المحدث:</div>
+    <div id="muhaddith" class="value"></div>
 
-    <span class="label">المصدر:</span>
-    <div id="source">⏳ تحميل...</div>
+    <div class="label">المصدر:</div>
+    <div id="source" class="value"></div>
 
-    <span class="label">الصفحة أو الرقم:</span>
-    <div id="page_number">⏳ تحميل...</div>
+    <div class="label">الحكم:</div>
+    <div id="hukm" class="value"></div>
 
-    <span class="label">الحكم:</span>
-    <div id="hukm">⏳ تحميل...</div>
+    <div class="label">التخريج:</div>
+    <div id="takhrij" class="value"></div>
 
-    <span class="label">التخريج:</span>
-    <div id="takhrij">⏳ تحميل...</div>
+    <div class="label">التصنيف:</div>
+    <div id="categories" class="value"></div>
 
-    <span class="label">التصنيف:</span>
-    <div id="categories">⏳ تحميل...</div>
+    <br>
+    <a href="index.html" class="btn">رجوع للبحث</a>
+  </div>
 </div>
 
-
 <script>
-// استخراج رقم الحديث من الرابط
-const params = new URLSearchParams(window.location.search);
-const hadithID = params.get("id");
+  // 1️⃣ اجلب رقم الحديث من الرابط
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
 
-// ✅ API الصحيح من Oracle
-const API_URL = `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_by_id/${hadithID}`;
+  // 2️⃣ رابط API Oracle حسب رقم الحديث
+  const API_URL =
+  `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_by_id/${id}`;
 
-// جلب الحديث من Oracle وعرضه
-async function loadHadith() {
-    try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
+  // 3️⃣ اجلب بيانات الحديث
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      const h = data.items?.[0]; // Oracle يرجع البيانات داخل items[]
 
-        if (!data.items || data.items.length === 0) {
-            document.getElementById("hadith_text").innerText = h.text || "—";
+      // في حالة لم يوجد الحديث
+      if (!h) {
+        document.getElementById("text").innerText = "الحديث غير موجود.";
+        return;
+      }
 
-            return;
-        }
-
-        const h = data.items[0];
-
-document.getElementById("hadith_text").innerText   = h.text || "—";
-document.getElementById("sharh").innerText         = h.sharh || "—";
-document.getElementById("rawi").innerText          = h.rawi || "—";
-document.getElementById("muhaddith").innerText     = h.muhaddith || "—";
-document.getElementById("source").innerText        = h.source || "—";
-document.getElementById("page_number").innerText   = h.page_number || "—";
-document.getElementById("hukm").innerText          = h.hukm || "—";
-document.getElementById("takhrij").innerText       = h.takhrij || "—";
-document.getElementById("categories").innerText    = (h.categories || []).join(" ، ");
-
-    }
-    catch(err){
-        document.getElementById("hadith_text").innerText = "حدث خطأ أثناء تحميل البيانات.";
-    }
-}
-
-loadHadith();
+      document.getElementById("text").innerText = h.text || "—";
+      document.getElementById("sharh").innerText = h.sharh || "—";
+      document.getElementById("rawi").innerText = h.rawi || "—";
+      document.getElementById("muhaddith").innerText = h.muhaddith || "—";
+      document.getElementById("source").innerText = h.source || "—";
+      document.getElementById("hukm").innerText = h.hukm || "—";
+      document.getElementById("takhrij").innerText = h.takhrij || "—";
+      document.getElementById("categories").innerText = h.categories || "—";
+    })
+    .catch(err => {
+      document.getElementById("text").innerText = "خطأ في تحميل البيانات.";
+      console.error(err);
+    });
 </script>
 
 </body>
