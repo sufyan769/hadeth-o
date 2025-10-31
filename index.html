@@ -1,65 +1,79 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8" />
 <title>البحث في الأحاديث</title>
 
 <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
 
 <style>
- body { font-family: Arial, sans-serif; direction: rtl; background:#fafafa; padding:30px; }
- input { width:100%; padding:15px; font-size:20px; border-radius:6px; border:1px solid #ccc; }
- .result { background:white; padding:15px; margin-top:10px; border-radius:6px; }
+  body { font-family: Arial; text-align:center; padding:40px; background:#fafafa; }
+  #results { text-align: right; width: 70%; margin:auto; }
+
+  .hit {
+    padding: 15px;
+    margin: 10px 0;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 4px rgba(0,0,0,.1);
+    font-size: 20px;
+    line-height: 1.8;
+  }
+
+  .hit mark { background: yellow; }
+
+  .link {
+    display: inline-block;
+    margin-top: 5px;
+    color: #0057ff;
+    text-decoration: none;
+  }
 </style>
+
 </head>
 <body>
 
-<input id="searchBox" placeholder="ابحث هنا...">
-
+<h2>🔍 البحث في الأحاديث</h2>
+<div id="searchbox"></div>
+<br>
 <div id="results"></div>
-<div id="debug" style="margin-top:20px; color:red;"></div>
 
 <script>
-const APP_ID     = "3XD12I7386";
-const SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";   // فقط للبحث (آمن)
-const INDEX_NAME = "hadeth-2";
+  const searchClient = algoliasearch(
+    "3XD12I7386",   // ✅ APP ID
+    "89e8e132a05fdb02275f64dec8d14d05" // ✅ Search API Key
+  );
 
-// ✅ اتصال Algolia
-const client = algoliasearch(APP_ID, SEARCH_KEY);
-const index  = client.initIndex(INDEX_NAME);
+  const search = instantsearch({
+    indexName: "hadeth-2",
+    searchClient,
+  });
 
-// ✅ عند الكتابة في البحث
-document.getElementById("searchBox").addEventListener("input", async (e) => {
-    const q = e.target.value.trim();
-    let resultsDiv = document.getElementById("results");
-    let debug = document.getElementById("debug");
+  search.addWidgets([
+    instantsearch.widgets.searchBox({
+      container: "#searchbox",
+      placeholder: "اكتب كلمة للبحث...",
+      autofocus: true,
+    }),
 
-    resultsDiv.innerHTML = "";
-    debug.innerHTML = "";
-
-    if (q === "") return;
-
-    try {
-        const res = await index.search(q);
-
-        if (res.hits.length === 0) {
-            resultsDiv.innerHTML = "<p>لا توجد نتائج</p>";
-            return;
+    instantsearch.widgets.hits({
+      container: "#results",
+      templates: {
+        item(hit) {
+          return `
+            <div class="hit">
+              ${hit._highlightResult.text.value}
+              <br>
+              <a href="${hit.url}" target="_blank" class="link">فتح الحديث</a>
+            </div>
+          `;
         }
+      }
+    }),
+  ]);
 
-        res.hits.forEach(h => {
-            resultsDiv.innerHTML += `
-                <div class="result">
-                    ${h.text}
-                </div>
-            `;
-        });
-
-    } catch (err) {
-        debug.innerHTML = "❌ خطأ: " + err;
-        console.error(err);
-    }
-});
+  search.start();
 </script>
 
 </body>
