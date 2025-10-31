@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<title>تفاصيل الحديث</title>
+<style>
+body { font-family: sans-serif; padding:25px; background:#f5f5f5; line-height:2; }
+.box { background:white; padding:20px; border-radius:10px; margin-bottom:15px; }
+label { font-weight:bold; color:#444; }
+</style>
+</head>
+<body>
+
+<div id="content" class="box">جاري تحميل الحديث...</div>
+
+<script>
+// الحصول على رقم الحديث من الرابط
+const id = new URLSearchParams(window.location.search).get("id");
+
+// ✅ Oracle REST API (جلب التفاصيل حسب ID فقط)
+const API_URL =
+  `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_by_id/${id}`;
+
+fetch(API_URL)
+  .then(res => res.json())
+  .then(data => {
+      if (!data.items || data.items.length === 0) {
+          content.innerHTML = "❌ لا يوجد حديث بهذا الرقم.";
+          return;
+      }
+
+      const h = data.items[0];
+
+      content.innerHTML = `
+        <div class="box"><label>الحديث:</label><br>${h.TEXT}</div>
+        <div class="box"><label>الشرح:</label><br>${h.SHARH || "—"}</div>
+        <div class="box"><label>الراوي:</label> ${h.RAWI || "—"}</div>
+        <div class="box"><label>المحدث:</label> ${h.MUHADDITH || "—"}</div>
+        <div class="box"><label>المصدر:</label> ${h.SOURCE || "—"}</div>
+        <div class="box"><label>الحكم:</label> ${h.HUKM || "—"}</div>
+        <div class="box"><label>التخريج:</label> ${h.TAKHRIJ || "—"}</div>
+        <div class="box"><label>التصنيف:</label> ${h.CATEGORIES || "—"}</div>
+      `;
+  })
+  .catch(() => content.innerHTML = "⚠️ خطأ أثناء الاتصال بالخادم.");
+</script>
+
+</body>
+</html>
