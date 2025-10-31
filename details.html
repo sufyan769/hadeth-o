@@ -58,21 +58,23 @@ async function loadHadith() {
         const data = await res.json();
 
         if (!data.items || data.items.length === 0) {
-            document.getElementById("hadith_text").innerText = "لم يتم العثور على الحديث.";
+            document.getElementById("hadith_text").innerText = h.text || "—";
+
             return;
         }
 
         const h = data.items[0];
 
-        document.getElementById("hadith_text").innerText = h.hadith_text || "—";
-        document.getElementById("sharh").innerText = h.sharh || "—";
-        document.getElementById("rawi").innerText = h.rawi || "—";
-        document.getElementById("muhaddith").innerText = h.muhaddith || "—";
-        document.getElementById("source").innerText = h.source || "—";
-        document.getElementById("page_number").innerText = h.page_number || "—";
-        document.getElementById("hukm").innerText = h.hukm || "—";
-        document.getElementById("takhrij").innerText = h.takhrij || "—";
-        document.getElementById("categories").innerText = (h.categories || []).join(" ، ");
+document.getElementById("hadith_text").innerText   = h.text || "—";
+document.getElementById("sharh").innerText         = h.sharh || "—";
+document.getElementById("rawi").innerText          = h.rawi || "—";
+document.getElementById("muhaddith").innerText     = h.muhaddith || "—";
+document.getElementById("source").innerText        = h.source || "—";
+document.getElementById("page_number").innerText   = h.page_number || "—";
+document.getElementById("hukm").innerText          = h.hukm || "—";
+document.getElementById("takhrij").innerText       = h.takhrij || "—";
+document.getElementById("categories").innerText    = (h.categories || []).join(" ، ");
+
     }
     catch(err){
         document.getElementById("hadith_text").innerText = "حدث خطأ أثناء تحميل البيانات.";
