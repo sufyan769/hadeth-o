@@ -1,33 +1,47 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>باحث متقدم في كتب OpenITI</title>
+    <title>باحث الحديث الشريف للأطفال</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;500;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              'display': ['Bangers', 'cursive'],
-              'sans': ['Patrick Hand', 'sans-serif'],
+              'sans': ['Changa', 'sans-serif'],
             },
             colors: {
-               'paper': '#FDF5E6', // Old paper color
-               'ink': '#333333',
-               'accent': {
-                 DEFAULT: '#D9534F',
-                 dark: '#C9302C'
+               'sky': {
+                    50: '#f0f9ff',
+                    100: '#e0f2fe',
+                    200: '#bae6fd',
+                    300: '#7dd3fc',
+                    400: '#38bdf8',
+                    500: '#0ea5e9',
+                    600: '#0284c7',
+                    700: '#0369a1',
+                    800: '#075985',
+                    900: '#0c4a6e',
                },
-            },
-            boxShadow: {
-              'cartoon': '4px 4px 0px #333333',
-              'cartoon-sm': '2px 2px 0px #333333',
-              'cartoon-active': '1px 1px 0px #333333',
+               'cream': '#FFFDD0',
+               'sunny': {
+                    300: '#FDE047', // yellow-300
+                    400: '#FACC15', // yellow-400
+               },
+               'orange': {
+                    400: '#FB923C', // orange-400
+                    500: '#F97316', // orange-500
+               },
+               'navy': {
+                    800: '#1e3a8a',
+                    900: '#1e40af',
+               }
             }
           },
         },
@@ -36,13 +50,27 @@
   <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client"
+    "react": "https://aistudiocdn.com/react@^18.2.0",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^18.2.0/client",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
   }
 }
 </script>
+<style>
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .cartoon-shadow {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1), 0 0 0 2px #1e3a8a;
+  }
+  .cartoon-shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1), 0 0 0 3px #1e3a8a;
+  }
+</style>
 </head>
-<body class="bg-paper font-sans text-ink">
+<body class="bg-sky-200 font-sans">
     <div id="root"></div>
     <script type="module">
 // START of Embedded Application Code
@@ -50,137 +78,123 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 
-// --- 1. ثوابت الأنواع (types.ts) ---
-const SearchType = {
-  AND: "AND",
-  PHRASE: "PHRASE",
-  FUZZY_WILDCARD: "FUZZY_WILDCARD",
-  MULTI_FIELD: "MULTI_FIELD",
-  BOOL: "BOOL",
-  RANGE: "RANGE",
-};
-
-const searchService = (API_ENDPOINT, CATEGORY_API_ENDPOINT) => async (params, from, size) => {
-    const { query, type } = params;
-    
-    if (type === 'category') {
-        const categoryUrl = `${CATEGORY_API_ENDPOINT}/${encodeURIComponent(query)}`;
-        const categoryResponse = await fetch(categoryUrl);
-        if (!categoryResponse.ok) throw new Error(`فشل طلب التصنيف: ${categoryResponse.status}`);
-        const data = await categoryResponse.json();
-        return {
-            total: { value: data.count || (data.items || []).length, relation: 'eq' },
-            hits: (data.items || []).map((hit, index) => ({ ...hit, _id: hit.id || `${from}-${index}` })),
-            suggest: null,
-        };
-    }
-
-    const searchUrl = `${API_ENDPOINT}/${encodeURIComponent(query)}`;
-    
-    const queryParams = new URLSearchParams({
-        offset: String(from),
-        limit: String(size),
-    });
-    
-    const fullUrl = `${searchUrl}?${queryParams.toString()}`;
-
-    try {
-        const response = await fetch(fullUrl);
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error("API Error Response:", errorBody);
-            throw new Error(`فشل الطلب مع الحالة: ${response.status}`);
-        }
-        const data = await response.json();
-        const hits = data.items || [];
-        const total = data.count || data.total_results || 0;
-        
-        if (!Array.isArray(hits)) {
-             throw new Error("API returned an invalid hits array.");
-        }
-
-        return {
-            total: { value: total, relation: 'eq' },
-            hits: hits.map((hit, index) => ({ ...hit, _id: hit.id || `${from}-${index}` })),
-            suggest: null,
-        };
-    } catch (err) {
-        console.error('Search error:', err);
-        throw new Error(err.message.includes('فشل الطلب') ? err.message : 'حدث خطأ غير متوقع أثناء البحث. يرجى التحقق من الشبكة والمحاولة مرة أخرى.');
-    }
-};
-
-const search = searchService(
-    'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_combined',
-    'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_category'
-);
-
-
-// --- 2. الأيقونات (components/icons.tsx) ---
+// --- 1. الأيقونات ---
 const SearchIcon = ({ className = "w-6 h-6" }) => (
-  React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+  React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", strokeWidth: "2.5", stroke: "currentColor" },
     React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" })
   )
 );
 
 const ArrowRightIcon = ({ className = "w-6 h-6" }) => (
-  React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
-    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M14 5l7 7m0 0l-7 7m7-7H3" })
+  React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", strokeWidth: "2.5", stroke: "currentColor" },
+    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" })
   )
 );
 
 const ArrowLeftIcon = ({ className = "w-6 h-6" }) => (
-  React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
-    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M10 19l-7-7m0 0l7-7m-7 7h18" })
+  React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", strokeWidth: "2.5", stroke: "currentColor" },
+    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" })
   )
 );
 
 const ZoomInIcon = ({ className = "w-6 h-6" }) => (
-    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
-        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3h-6" })
+    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", strokeWidth: "2.5", stroke: "currentColor" },
+        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10.5 7.5v6m3-3h-6" })
     )
 );
 
 const ZoomOutIcon = ({ className = "w-6 h-6" }) => (
-    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
-        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" })
+    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", strokeWidth: "2.5", stroke: "currentColor" },
+        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13.5 10.5h-6" })
     )
 );
 
 const CloseIcon = ({ className = "w-6 h-6" }) => (
-    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className, fill: "none", viewBox: "0 0 24 24", strokeWidth: "2.5", stroke: "currentColor" },
         React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M6 18L18 6M6 6l12 12" })
     )
 );
 
-// --- 4. شريط البحث (components/SearchBar.tsx) ---
+// --- 2. خدمة البحث ---
+const API_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_combined/';
+const CATEGORY_API_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_category/';
+
+const processApiResponse = async (response, from) => {
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+    }
+    const data = await response.json();
+    const items = data.items || (Array.isArray(data) ? data : null);
+    if (!items) {
+      throw new Error("API returned an invalid data structure.");
+    }
+    const hits = items.map((item, index) => ({
+        ...item,
+        _id: item.id || `${from}-${index}`,
+        objectID: item.id || `${from}-${index}`,
+    }));
+    const totalCount = data.count ?? 0;
+    return {
+        total: { value: totalCount, relation: 'eq' },
+        hits: hits,
+        suggest: null,
+    };
+};
+
+const search = async (query, from, size) => {
+    const url = new URL(API_BASE_URL);
+    url.searchParams.append('q', query);
+    url.searchParams.append('offset', String(from));
+    url.searchParams.append('limit', String(size));
+    const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+    });
+    return processApiResponse(response, from);
+};
+
+const searchByCategory = async (category, from, size) => {
+    const url = new URL(CATEGORY_API_BASE_URL + encodeURIComponent(category));
+    url.searchParams.append('offset', String(from));
+    url.searchParams.append('limit', String(size));
+    const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+    });
+    return processApiResponse(response, from);
+};
+
+// --- 3. شريط البحث ---
 const SearchBar = ({ onSearch, isLoading, query, onQueryChange }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
-      onSearch({ query, type: 'search' });
+      onSearch(query);
     }
   };
+  
+  const inputClasses = "p-4 text-xl border-2 border-navy-800 rounded-full shadow-inner transition bg-white text-navy-900 placeholder-sky-800/50 focus:ring-4 focus:outline-none focus:ring-orange-400 focus:border-orange-500";
+
   return (
-    React.createElement('div', { className: 'w-full max-w-3xl mx-auto p-4' },
-      React.createElement('form', { onSubmit: handleSubmit, className: "flex items-center gap-2" },
-        React.createElement('div', { className: "relative flex-grow" },
-          React.createElement('input', {
-            type: "text", value: query, onChange: (e) => onQueryChange(e.target.value),
-            placeholder: "أدخل عبارتك للبحث...",
-            className: "w-full p-3 pr-12 text-lg bg-white text-ink border-2 border-ink rounded-lg shadow-cartoon-sm focus:outline-none focus:shadow-cartoon focus:translate-x-[-2px] focus:translate-y-[-2px] transition-all placeholder-gray-500",
-            'aria-label': "Search query"
-          })
-        ),
-        React.createElement('button', { type: "submit", className: "p-3 bg-accent text-white border-2 border-ink rounded-lg shadow-cartoon-sm hover:bg-accent-dark active:shadow-cartoon-active active:translate-x-[2px] active:translate-y-[2px] transition-all disabled:opacity-70", disabled: isLoading, 'aria-label': "Submit search" },
-            isLoading ? React.createElement('div', { className: "w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" }) : React.createElement(SearchIcon, { className: "w-6 h-6" })
+    React.createElement('div', { className: 'w-full max-w-xl mx-auto p-4' },
+      React.createElement('form', { onSubmit: handleSubmit },
+        React.createElement('div', { className: "relative" },
+            React.createElement('input', {
+              type: "text", value: query, onChange: (e) => onQueryChange(e.target.value),
+              placeholder: "ابحث عن حديث...",
+              className: `w-full pr-16 ${inputClasses}`, 'aria-label': "Search query"
+            }),
+            React.createElement('button', { type: "submit", className: "absolute left-2 top-1/2 -translate-y-1/2 text-white bg-orange-500 hover:bg-orange-400 w-14 h-14 rounded-full flex items-center justify-center transition transform hover:scale-110", disabled: isLoading, 'aria-label': "Submit search" },
+              isLoading ? React.createElement('div', { className: "w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" }) : React.createElement(SearchIcon, { className: "w-8 h-8" })
+            )
         )
       )
     )
   );
 };
 
-// --- 5. التنقل (components/Pagination.tsx) ---
+// --- 4. التنقل ---
 const Pagination = ({ currentPage, totalResults, pageSize, onPageChange, isLoading }) => {
   const totalPages = Math.ceil(totalResults / pageSize);
   if (totalPages <= 1) return null;
@@ -214,107 +228,127 @@ const Pagination = ({ currentPage, totalResults, pageSize, onPageChange, isLoadi
   };
 
   const pageNumbers = getPageNumbers();
-  const buttonClass = "px-4 py-2 border-2 border-ink rounded-md transition-all duration-150 bg-white hover:bg-yellow-100 shadow-cartoon-sm active:shadow-cartoon-active active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-50 disabled:cursor-not-allowed";
-  const activeClass = "bg-yellow-300 font-bold";
+  const buttonClass = "px-4 py-2 rounded-lg transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed bg-white text-navy-800 font-bold cartoon-shadow transform hover:scale-105 hover:-translate-y-1";
+  const activeClass = "bg-sunny-400 text-navy-900 ring-2 ring-navy-800";
   return (
-    React.createElement('nav', { className: "flex justify-center items-center gap-2 mt-8 flex-wrap", 'aria-label': "Pagination" },
+    React.createElement('nav', { className: "flex justify-center items-center gap-3 mt-8", 'aria-label': "Pagination" },
       React.createElement('button', {
         onClick: () => handlePageClick(currentPage - 1), disabled: currentPage === 1 || isLoading,
         className: `${buttonClass} flex items-center gap-2`, 'aria-label': "الصفحة السابقة"
-      }, React.createElement(ArrowRightIcon, { className: "w-4 h-4" }), "السابق"),
+      }, React.createElement(ArrowRightIcon, { className: "w-5 h-5" }), "السابق"),
       
       pageNumbers.map((page, index) =>
         typeof page === 'number' ? (
           React.createElement('button', {
             key: index, onClick: () => handlePageClick(page), disabled: isLoading,
-            className: `${buttonClass} ${currentPage === page ? activeClass : ''}`,
+            className: `w-12 h-12 ${buttonClass} ${currentPage === page ? activeClass : ''}`,
             'aria-current': currentPage === page ? 'page' : undefined
           }, page)
-        ) : ( React.createElement('span', { key: index, className: "px-4 py-2 text-ink/70" }, page) )
+        ) : ( React.createElement('span', { key: index, className: "px-2 text-navy-800 font-bold" }, page) )
       ),
       React.createElement('button', {
         onClick: () => handlePageClick(currentPage + 1), disabled: currentPage === totalPages || isLoading,
         className: `${buttonClass} flex items-center gap-2`, 'aria-label': "الصفحة التالية"
-      }, "التالي", React.createElement(ArrowLeftIcon, { className: "w-4 h-4" }))
+      }, "التالي", React.createElement(ArrowLeftIcon, { className: "w-5 h-5" }))
     )
   );
 };
 
-// --- 6. نتائج البحث (components/SearchResults.tsx) ---
-const ResultItem = ({ hit, onResultClick }) => {
-    
+// --- 5. نتائج البحث ---
+const ResultItem = ({ hit, onResultClick, query }) => {
+    const highlight = (text) => {
+        if (!query || !text) return text || '';
+        const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const terms = escapedQuery.split(' ').filter(Boolean);
+        if (terms.length === 0) return text;
+        const regex = new RegExp(`(${terms.join('|')})`, 'gi');
+        return text.replace(regex, `<mark class='bg-sunny-300 text-navy-900 px-1 rounded-sm'>$1</mark>`);
+    };
+
     const getTitle = () => {
         const pageOrNum = hit.page_number;
-        const sourceText = (hit.source || 'مصدر غير معروف');
+        const sourceText = hit.source || 'مصدر غير معروف';
         return pageOrNum ? `${sourceText} - ${pageOrNum}` : sourceText;
     };
     
     const getSnippet = () => {
-        const content = hit.text || '';
-        return content.length > 300 ? content.substring(0, 300) + '...' : content;
+        const hadithText = hit.text || hit.sharh || '';
+        return hadithText.length > 250 ? hadithText.substring(0, 250) + '...' : hadithText;
     };
 
-    const getDetails = (s) => {
-        const parts = [];
-        if (s.muhaddith) parts.push(`المحدث: ${s.muhaddith}`);
-        if (s.hukm) parts.push(`الحكم: ${s.hukm}`);
-        if (s.rawi) parts.push(`الراوي: ${s.rawi}`);
-        return parts.join(' | ');
-    }
-    
     return (
         React.createElement('div', { 
-          className: "p-4 border-2 border-ink rounded-lg bg-white hover:shadow-cartoon transition-all duration-200 cursor-pointer hover:-translate-x-1 hover:-translate-y-1",
-          onClick: () => onResultClick(hit)
+            className: "p-5 rounded-2xl bg-cream cartoon-shadow-lg cursor-pointer hover:bg-yellow-100 transition duration-300 transform hover:-translate-y-1",
+            onClick: () => onResultClick(hit) 
         },
-            React.createElement('h3', { className: "text-2xl text-accent font-display tracking-wide" }, getTitle()),
-            React.createElement('p', { className: "text-gray-700 leading-relaxed mt-2", dangerouslySetInnerHTML: { __html: getSnippet() }}),
-            React.createElement('div', { className: "text-sm text-gray-500 mt-3" }, React.createElement('span', null, getDetails(hit)))
+            React.createElement('h3', { className: "text-2xl font-bold text-navy-900", dangerouslySetInnerHTML: { __html: highlight(getTitle()) }}),
+            React.createElement('div', { className: "text-navy-800 leading-relaxed mt-2 text-lg", dangerouslySetInnerHTML: { __html: highlight(getSnippet()) }}),
+            hit.rawi && React.createElement('div', { className: "text-sm text-sky-900 mt-3 font-sans" }, React.createElement('span', { className: "font-bold" }, "الراوي: "), React.createElement('span', null, hit.rawi))
         )
     );
 };
-const SearchResults = ({ results, isLoading, error, onResultClick }) => {
+
+const SearchResults = ({ results, isLoading, error, onResultClick, query }) => {
     if (isLoading) return React.createElement('div', { className: "text-center p-10" },
-        React.createElement('div', { className: "w-8 h-8 border-4 border-ink border-t-transparent rounded-full animate-spin mx-auto" }),
-        React.createElement('p', { className: "mt-4 text-lg text-ink" }, "جاري البحث...")
+        React.createElement('div', { className: "w-12 h-12 border-8 border-sunny-400 border-t-navy-800 rounded-full animate-spin mx-auto" }),
+        React.createElement('p', { className: "mt-4 text-2xl font-bold text-navy-900" }, "جاري البحث يا بطل...")
     );
-    if (error) return React.createElement('div', { className: "text-center p-10 text-accent bg-red-100 rounded-lg border-2 border-accent" },
-        React.createElement('p', { className: "font-bold text-lg" }, "حدث خطأ"),
-        React.createElement('p', null, error)
+    if (error) return React.createElement('div', { className: "text-center p-10 text-red-600 bg-red-100 rounded-2xl cartoon-shadow" },
+        React.createElement('p', { className: "font-bold text-2xl" }, "أوه! خطأ"),
+        React.createElement('p', { className: "mt-2 text-lg" }, error)
     );
-    if (!results) return React.createElement('div', { className: "text-center p-10 text-gray-500" }, React.createElement('p', { className: "text-xl" }, "أدخل كلمة أو عبارة لبدء البحث!"));
+    if (!results) return React.createElement('div', { className: "text-center p-10 text-navy-800" }, React.createElement('p', {className: 'text-xl'}, "يلا نبحث عن حديث جديد!"));
     
     return (
         React.createElement('div', null,
             results.hits.length === 0 ? 
-                React.createElement('div', { className: "text-center p-10 text-gray-500" }, React.createElement('p', { className: "text-xl" }, "لا توجد نتائج... حاول بكلمات أخرى."))
+                React.createElement('div', { className: "text-center p-10 text-navy-800" }, React.createElement('p', {className: 'text-xl'}, "لم نجد شيئًا، حاول مرة أخرى!"))
             : (
-                React.createElement('div', { className: "space-y-4" },
-                    React.createElement('p', { className: "text-gray-600 mb-4" }, `تم العثور على ${results.total.value} ${results.total.relation === 'eq' ? 'نتيجة' : 'نتيجة تقريبًا'}.`),
-                    results.hits.map((hit) => React.createElement(ResultItem, { key: hit._id, hit: hit, onResultClick: onResultClick }))
+                React.createElement('div', { className: "space-y-5" },
+                    React.createElement('p', { className: "text-navy-800 mb-4 font-bold" }, `وجدنا ${results.total.value} نتيجة رائعة!`),
+                    results.hits.map((hit) => React.createElement(ResultItem, { key: hit._id, hit: hit, onResultClick: onResultClick, query: query }))
                 )
             )
         )
     );
 };
 
-// --- 7. عرض الكتاب (components/BookView.tsx) ---
+// --- 6. عرض الكتاب ---
 const DetailRow = ({ label, value }) => {
     if (!value) return null;
-    return React.createElement('div', { className: "py-2 px-3 flex flex-wrap gap-x-4 border-b-2 border-dashed border-gray-300" },
-        React.createElement('dt', { className: "w-full sm:w-32 font-bold text-gray-800 flex-shrink-0" }, label),
-        React.createElement('dd', { className: "text-gray-600 flex-1", dangerouslySetInnerHTML: { __html: value } })
+    return React.createElement('div', { className: "py-3 px-4 flex flex-col sm:flex-row gap-x-4 bg-sky-100 even:bg-sky-200/70" },
+        React.createElement('dt', { className: "w-full sm:w-32 font-bold text-navy-800 flex-shrink-0" }, label),
+        React.createElement('dd', { className: "text-navy-900 flex-1", dangerouslySetInnerHTML: { __html: String(value) } })
     );
 };
 
 const BookView = ({ hits, currentIndex, onNavigate, onClose, onCategoryClick }) => {
     const currentHit = hits[currentIndex];
-    const [fontSize, setFontSize] = useState(18);
-    const source = currentHit;
+    const [fontSize, setFontSize] = useState(20);
+    const [fullSharh, setFullSharh] = useState(null); 
+    const [isSharhLoading, setIsSharhLoading] = useState(false);
     
     useEffect(() => {
+        const fetchFullSharh = async (hit) => {
+            setIsSharhLoading(true);
+            setFullSharh(null);
+            if (hit.sharh_url) {
+                try {
+                    const response = await fetch(hit.sharh_url);
+                    if (!response.ok) throw new Error(`فشل جلب الملف: ${response.statusText}`);
+                    const sharhText = await response.text();
+                    setFullSharh(sharhText.trim() || 'لا يتوفر شرح لهذا الحديث.');
+                } catch (error) {
+                    setFullSharh(`حدث خطأ أثناء تحميل الشرح من الرابط: ${error.message}`);
+                }
+            } else {
+                setFullSharh(hit.sharh || 'لا يتوفر رابط أو شرح لهذا الحديث.');
+            }
+            setIsSharhLoading(false);
+        };
+        fetchFullSharh(currentHit);
         document.querySelector('.book-view-container')?.scrollTo(0, 0);
-    }, [currentIndex]);
+    }, [currentHit]);
 
     const getTitle = (s) => {
         const pageOrNum = s.page_number;
@@ -322,67 +356,78 @@ const BookView = ({ hits, currentIndex, onNavigate, onClose, onCategoryClick }) 
         return pageOrNum ? `${sourceText} - ${pageOrNum}` : sourceText;
     };
     
-    const renderCategories = (categoriesString) => {
-        if (!categoriesString) return null;
-        const categories = categoriesString.split(',').map(c => c.trim()).filter(Boolean);
-        if (categories.length === 0) return null;
-
-        return React.createElement('div', { className: "py-2 px-3 flex flex-wrap gap-x-4 border-b-2 border-dashed border-gray-300" },
-            React.createElement('dt', { className: "w-full sm:w-32 font-bold text-gray-800 flex-shrink-0" }, "التصنيفات"),
-            React.createElement('dd', { className: "text-gray-600 flex-1 flex flex-wrap items-center gap-2" },
-                categories.map((item, index) => React.createElement('button', { 
-                    key: index, 
-                    onClick: () => onCategoryClick(item),
-                    className: "inline-block bg-accent text-white rounded-full px-3 py-1 text-sm hover:bg-accent-dark transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
-                }, item))
-            )
-        );
+    const renderCategories = (categories) => {
+        if (!categories) return null;
+        const categoriesStr = Array.isArray(categories) ? categories.join(',') : String(categories);
+        try {
+            const cleaned = categoriesStr.replace(/^\[|\]$/g, '').trim();
+            if (!cleaned) return null;
+            const allCategoryParts = [...new Set(cleaned.split(',').map(item => item.trim().replace(/^"|"$/g, '')).filter(Boolean))];
+            if (allCategoryParts.length === 0) return null;
+            return React.createElement('div', { className: "py-3 px-4 flex flex-col sm:flex-row items-start gap-x-4 bg-sky-100 even:bg-sky-200/70" },
+                React.createElement('dt', { className: "w-full sm:w-32 font-bold text-navy-800 flex-shrink-0 pt-1" }, "المواضيع"),
+                React.createElement('dd', { className: "text-navy-900 flex-1 flex flex-wrap gap-2" },
+                    allCategoryParts.map((part, index) => 
+                        React.createElement('button', {
+                            key: index,
+                            onClick: () => onCategoryClick(part),
+                            className: "bg-orange-400 text-white px-4 py-1 rounded-full font-bold hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-sky-100 focus:ring-navy-800 transition transform hover:scale-105"
+                        }, part)
+                    )
+                )
+            );
+        } catch (e) {
+            return React.createElement(DetailRow, { label: "المواضيع", value: categoriesStr });
+        }
     };
     
-    const navButtonClass = "p-2 border-2 border-ink rounded-lg bg-white hover:bg-yellow-100 shadow-cartoon-sm active:shadow-cartoon-active active:translate-x-[2px] active:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-4";
+    const navButtonClass = "p-2 rounded-full bg-white hover:bg-yellow-100 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-4 text-navy-800 font-bold cartoon-shadow transform hover:scale-105";
 
     return (
-        React.createElement('div', { className: "p-4 md:p-8 min-h-screen book-view-container" },
-             React.createElement('div', { className: "max-w-4xl mx-auto bg-paper shadow-cartoon rounded-lg border-2 border-ink" },
-                React.createElement('header', { className: "p-4 border-b-2 border-ink bg-gray-100/50 rounded-t-lg sticky top-0 z-10" },
+        React.createElement('div', { className: "p-4 md:p-8 bg-sky-200 text-navy-900 min-h-screen book-view-container" },
+             React.createElement('div', { className: "max-w-4xl mx-auto bg-cream shadow-2xl rounded-3xl cartoon-shadow-lg" },
+                React.createElement('header', { className: "p-4 border-b-4 border-navy-800 bg-sunny-300 rounded-t-3xl sticky top-0 z-10" },
                     React.createElement('div', { className: "flex justify-between items-center gap-4" },
                         React.createElement('div', { className: "flex-1 min-w-0" },
-                            React.createElement('h1', { className: "text-3xl md:text-4xl text-accent font-display tracking-wider truncate", title: getTitle(source) }, getTitle(source))
+                            React.createElement('h1', { className: "text-2xl md:text-3xl font-bold text-navy-900 truncate", title: getTitle(currentHit) }, getTitle(currentHit))
                         ),
-                        React.createElement('button', { onClick: onClose, className: "p-2 rounded-full hover:bg-red-100 transition flex-shrink-0", 'aria-label': "إغلاق عرض الكتاب" },
-                            React.createElement(CloseIcon, { className: "w-6 h-6 text-accent" })
+                        React.createElement('button', { onClick: onClose, className: "w-12 h-12 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition flex-shrink-0 cartoon-shadow transform hover:scale-110", 'aria-label': "إغلاق" },
+                            React.createElement(CloseIcon, { className: "w-8 h-8" })
                         )
                     )
                 ),
                 React.createElement('main', { className: "p-6 md:p-8" },
-                    React.createElement('div', { className: "leading-loose whitespace-pre-wrap text-right text-ink", style: { fontSize: `${fontSize}px` }},
-                        React.createElement('h2', { className: "text-2xl font-display text-gray-800 mb-3" }, "نص الحديث"),
-                        React.createElement('p', { className: "mb-6 bg-white/50 p-4 rounded-md border-r-4 border-accent", dangerouslySetInnerHTML: { __html: source.text } }),
-                        React.createElement('h2', { className: "text-2xl font-display text-gray-800 mb-3" }, "الشرح"),
-                        React.createElement('p', { className: "mb-6 bg-white/50 p-4 rounded-md border-r-4 border-gray-400", dangerouslySetInnerHTML: { __html: source.sharh || 'لا يتوفر شرح لهذا الحديث.' } }),
-                        React.createElement('h2', { className: "text-2xl font-display text-gray-800 mb-3" }, "تفاصيل الحديث"),
-                         React.createElement('dl', { className: "border-2 border-gray-300 rounded-md overflow-hidden bg-white/50" },
-                            React.createElement(DetailRow, { label: "المصدر", value: source.source }),
-                            React.createElement(DetailRow, { label: "الصفحة/الرقم", value: source.page_number }),
-                            React.createElement(DetailRow, { label: "الراوي", value: source.rawi }),
-                            React.createElement(DetailRow, { label: "المحدث", value: source.muhaddith }),
-                            React.createElement(DetailRow, { label: "الحكم", value: source.hukm }),
-                            React.createElement(DetailRow, { label: "التخريج", value: source.takhrij }),
-                            renderCategories(source.categories),
-                            React.createElement(DetailRow, { label: "معرف", value: source.id })
+                    React.createElement('div', { className: "leading-loose whitespace-pre-wrap text-right text-navy-900", style: { fontSize: `${fontSize}px` }},
+                        React.createElement('h2', { className: "text-2xl font-bold text-navy-800 mb-3" }, "نص الحديث"),
+                        React.createElement('p', { className: "mb-6 bg-sky-100 p-4 rounded-xl border-2 border-sky-300", dangerouslySetInnerHTML: { __html: currentHit.text } }),
+                        React.createElement('h2', { className: "text-2xl font-bold text-navy-800 mb-3" }, "الشرح"),
+                        isSharhLoading ? React.createElement('div', { className: "text-center p-4 text-navy-800" }, "جاري تحميل الشرح...") : React.createElement('p', { className: "mb-6", dangerouslySetInnerHTML: { __html: fullSharh || '' } }),
+                        React.createElement('h2', { className: "text-2xl font-bold text-navy-800 mb-3" }, "تفاصيل الحديث"),
+                         React.createElement('dl', { className: "border-2 border-navy-800 rounded-xl overflow-hidden" },
+                            React.createElement(DetailRow, { label: "المصدر", value: currentHit.source }),
+                            React.createElement(DetailRow, { label: "الراوي", value: currentHit.rawi }),
+                            currentHit.muhaddith && currentHit.muhaddith === currentHit.hukm ? 
+                                React.createElement(DetailRow, { label: "الحكم والمحدث", value: currentHit.hukm })
+                             : React.createElement(React.Fragment, null,
+                                    React.createElement(DetailRow, { label: "المحدث", value: currentHit.muhaddith }),
+                                    React.createElement(DetailRow, { label: "الحكم", value: currentHit.hukm })
+                                ),
+                            React.createElement(DetailRow, { label: "التخريج", value: currentHit.takhrij }),
+                            renderCategories(currentHit.categories),
+                            React.createElement(DetailRow, { label: "معرف", value: currentHit.id || currentHit.objectID })
                         )
                     )
                 ),
-                React.createElement('footer', { className: "p-4 border-t-2 border-ink bg-gray-100/50 rounded-b-lg sticky bottom-0 z-10 flex justify-between items-center flex-wrap gap-4" },
+                React.createElement('footer', { className: "p-4 border-t-4 border-navy-800 bg-sunny-300 rounded-b-3xl sticky bottom-0 z-10 flex justify-between items-center flex-wrap gap-4" },
                     React.createElement('div', { className: "flex gap-2 items-center" },
                          React.createElement('button', { onClick: () => onNavigate(currentIndex - 1), disabled: currentIndex === 0, className: navButtonClass, 'aria-label': "النتيجة السابقة" }, React.createElement(ArrowRightIcon, { className: "w-5 h-5" }), "السابق"),
-                        React.createElement('span', { className: "text-ink font-bold tabular-nums" }, `${currentIndex + 1} / ${hits.length}`),
+                        React.createElement('span', { className: "text-navy-900 font-bold tabular-nums bg-white px-4 py-2 rounded-lg cartoon-shadow" }, `${currentIndex + 1} / ${hits.length}`),
                         React.createElement('button', { onClick: () => onNavigate(currentIndex + 1), disabled: currentIndex >= hits.length - 1, className: navButtonClass, 'aria-label': "النتيجة التالية" }, "التالي", React.createElement(ArrowLeftIcon, { className: "w-5 h-5" }))
                     ),
                     React.createElement('div', { className: "flex gap-2 items-center" },
-                        React.createElement('button', { onClick: () => setFontSize(s => Math.min(s + 1, 32)), className: "p-2 rounded-full hover:bg-yellow-100 transition", 'aria-label': "تكبير النص" }, React.createElement(ZoomInIcon, { className: "w-5 h-5" })),
-                        React.createElement('span', { className: "text-ink tabular-nums w-12 text-center" }, `${fontSize}px`),
-                        React.createElement('button', { onClick: () => setFontSize(s => Math.max(s - 1, 12)), className: "p-2 rounded-full hover:bg-yellow-100 transition", 'aria-label': "تصغير النص" }, React.createElement(ZoomOutIcon, { className: "w-5 h-5" }))
+                        React.createElement('button', { onClick: () => setFontSize(s => Math.min(s + 2, 40)), className: "w-12 h-12 rounded-full bg-white flex items-center justify-center text-navy-800 transition cartoon-shadow transform hover:scale-110", 'aria-label': "تكبير النص" }, React.createElement(ZoomInIcon, {className: "w-7 h-7"})),
+                        React.createElement('span', { className: "text-navy-900 font-bold tabular-nums w-16 text-center" }, `${fontSize}px`),
+                        React.createElement('button', { onClick: () => setFontSize(s => Math.max(s - 2, 14)), className: "w-12 h-12 rounded-full bg-white flex items-center justify-center text-navy-800 transition cartoon-shadow transform hover:scale-110", 'aria-label': "تصغير النص" }, React.createElement(ZoomOutIcon, {className: "w-7 h-7"}))
                     )
                 )
             )
@@ -390,7 +435,7 @@ const BookView = ({ hits, currentIndex, onNavigate, onClose, onCategoryClick }) 
     );
 };
 
-// --- 8. التطبيق الرئيسي (App.tsx) ---
+// --- 7. التطبيق الرئيسي ---
 const App = () => {
     const PAGE_SIZE = 20;
     const [searchResults, setSearchResults] = useState(null);
@@ -407,7 +452,12 @@ const App = () => {
         setError(null);
         const from = (page - 1) * PAGE_SIZE;
         try {
-            const results = await search(params, from, PAGE_SIZE);
+            let results;
+            if (params.type === 'category') {
+                results = await searchByCategory(params.value, from, PAGE_SIZE);
+            } else {
+                results = await search(params.value, from, PAGE_SIZE);
+            }
             setSearchResults(results);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (err) {
@@ -418,8 +468,9 @@ const App = () => {
         }
     };
 
-    const handleSearch = (params) => {
-        setCurrentQuery(params.query);
+    const handleSearch = (query) => {
+        const params = { type: 'text', value: query };
+        setCurrentQuery(query);
         setCurrentPage(1);
         setCurrentSearchParams(params);
         fetchResults(params, 1);
@@ -434,7 +485,7 @@ const App = () => {
 
     const handleResultClick = (hit) => {
         if (searchResults && searchResults.hits) {
-            const index = searchResults.hits.findIndex(h => h._id === hit._id); 
+            const index = searchResults.hits.findIndex(h => h.objectID === hit.objectID); 
             if (index !== -1) {
                 setSelectedHit(searchResults.hits[index]);
                 setSelectedHitIndex(index);
@@ -453,10 +504,14 @@ const App = () => {
         setSelectedHit(null);
         setSelectedHitIndex(null);
     };
-
-    const handleCategoryClick = (category) => {
+    
+    const handleCategorySearch = (category) => {
+        const params = { type: 'category', value: category };
+        setCurrentQuery(category);
+        setCurrentPage(1);
+        setCurrentSearchParams(params);
+        fetchResults(params, 1);
         handleCloseBookView();
-        handleSearch({ query: category, type: 'category' });
     };
 
     if (selectedHit && selectedHitIndex !== null && searchResults && searchResults.hits) {
@@ -465,22 +520,24 @@ const App = () => {
             currentIndex: selectedHitIndex, 
             onNavigate: handleBookViewNavigation, 
             onClose: handleCloseBookView,
-            onCategoryClick: handleCategoryClick
+            onCategoryClick: handleCategorySearch 
         });
     }
 
     return (
-        React.createElement('div', { className: "min-h-screen" },
-            React.createElement('header', { className: "py-6 text-center" },
-                React.createElement('h1', { className: "text-6xl md:text-7xl font-display text-accent tracking-wider", style: { textShadow: '3px 3px 0px #333' } }, "المكتبة الحديثية"),
-                React.createElement('p', { className: "text-xl mt-2 text-gray-600" }, "رحلة ممتعة في كنوز السنة النبوية!")
+        React.createElement('div', { className: "min-h-screen bg-sky-200 text-navy-900" },
+            React.createElement('header', { className: "bg-sunny-300 py-6 cartoon-shadow" },
+                React.createElement('div', { className: "container mx-auto px-4 text-center" },
+                    React.createElement('h1', { className: "text-5xl font-bold text-navy-900" }, "مكتبة الأحاديث للأبطال"),
+                    React.createElement('p', { className: "text-xl mt-2 text-navy-800 font-medium" }, "اقرأ وتعلم حديث النبي محمد ﷺ")
+                )
             ),
             React.createElement('main', { className: "container mx-auto p-4 md:p-8" },
-                React.createElement('div', { className: "bg-paper/80 backdrop-blur-sm p-4 sm:p-6 rounded-lg border-2 border-ink" },
+                React.createElement('div', { className: "bg-sky-300/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl cartoon-shadow-lg" },
                     React.createElement(SearchBar, { onSearch: handleSearch, isLoading: isLoading, query: currentQuery, onQueryChange: setCurrentQuery })
                 ),
                 React.createElement('div', { className: "mt-8" },
-                    React.createElement(SearchResults, { results: searchResults, isLoading: isLoading, error: error, onResultClick: handleResultClick }),
+                    React.createElement(SearchResults, { results: searchResults, isLoading: isLoading, error: error, onResultClick: handleResultClick, query: currentQuery }),
                     searchResults && searchResults.total.value > 0 && (
                         React.createElement(Pagination, {
                             currentPage: currentPage, totalResults: searchResults.total.value, pageSize: PAGE_SIZE,
@@ -489,8 +546,8 @@ const App = () => {
                     )
                 )
             ),
-            React.createElement('footer', { className: "text-center py-4 mt-8 text-sm text-gray-500" },
-                React.createElement('p', null, "صنع بحب وشغف")
+            React.createElement('footer', { className: "text-center py-4 mt-8 text-sm text-navy-800/70" },
+                React.createElement('p', { className: "font-bold" }, "تطبيق بحث تجريبي لمشروع OpenITI")
             )
         )
     );
