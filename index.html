@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8">
+<title>بحث الأحاديث</title>
+<input id="q" placeholder="أدخل كلمة (مثال: صلاة)" />
+<button onclick="go()">بحث</button>
+<pre id="out"></pre>
+<script>
+async function go(){
+  const out = document.getElementById('out');
+  const raw = document.getElementById('q').value.trim();
+  if(!raw){ out.textContent="اكتب كلمة للبحث."; return; }
+
+  // ✅ تشفير الكلمة العربية داخل المسار
+  const kw = encodeURIComponent(raw);
+
+  const url = `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_combined/${kw}`;
+  out.textContent = "⏳ جاري الاتصال...\n" + url;
+
+  try {
+    const res = await fetch(url, { method:'GET', headers:{ 'Accept':'application/json' }});
+    // إذا كان CORS يمنع، سيبقى الخطأ TypeError ولن نصل هنا
+    if(!res.ok){
+      out.textContent = `❌ HTTP Error\nStatus: ${res.status}\nStatusText: ${res.statusText}`;
+      return;
+    }
+    const data = await res.json().catch(e=>{
+      throw new Error("JSON parse failed (قد تكون الاستجابة ليست JSON).");
+    });
+
+    if(!data.items || data.items.length===0){
+      out.textContent = "⚠️ لا توجد نتائج.";
+      return;
+    }
+
+    out.textContent = ""; // عرض مختصر
+    for(const h of data.items){
+      out.textContent += `• ${h.text || "—"}\n   الراوي: ${h.rawi||"-"} | المصدر: ${h.source||"-"}\n   ${h.url||""}\n\n`;
+    }
+  } catch(err){
+    // ⛳ هنا يظهر سبب حقيقي على الشاشة
+    out.textContent = `❌ Failed to fetch (غالبًا CORS/شبكة)\n${err.message}\n\nملاحظات:\n- لو فتحت الملف محليًا file:// قد يمنع المتصفح.\n- جرّب فتح الرابط أعلاه في تبويب جديد.\n- افتح Network في DevTools لتتأكد هل كُتب: CORS error.`;
+    console.error(err);
+  }
+}
+</script>
+</html>
