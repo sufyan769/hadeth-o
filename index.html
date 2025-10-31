@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -143,8 +142,7 @@ const processApiResponse = async (response, from) => {
 };
 
 const search = async (query, from, size) => {
-    const url = new URL(API_BASE_URL);
-    url.searchParams.append('q', query);
+    const url = new URL(API_BASE_URL + encodeURIComponent(query));
     url.searchParams.append('offset', String(from));
     url.searchParams.append('limit', String(size));
     const response = await fetch(url.toString(), {
