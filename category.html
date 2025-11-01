@@ -44,10 +44,14 @@ fetch(apiUrl)
           container.innerHTML = "<p>لا توجد نتائج.</p>";
           return;
       }
+      
+      // In the previous version, the property was `hadeeth_id`. The API now seems to return `id`.
+      // Let's check both for compatibility.
+      const idKey = data.items[0].hasOwnProperty('id') ? 'id' : 'hadeeth_id';
 
       data.items.forEach(h => {
           container.innerHTML += `
-            <div class="hadith-item" onclick="openDetails(${h.id})">
+            <div class="hadith-item" onclick="openDetails(${h[idKey]})">
                 <div class="title">${h.text}</div>
             </div>
           `;
