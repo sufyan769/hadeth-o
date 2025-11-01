@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script>
+// ✅ routing: /hadith/1234/ → details.html?id=1234
+let p = location.pathname;
+
+// حديث
+let h = p.match(/\/hadith\/(\d+)\/?/);
+if (h) location.replace(`/hadeth-o/details.html?id=${h[1]}`);
+
+// تصنيف
+let c = p.match(/\/category\/(.+)\/?/);
+if (c) location.replace(`/hadeth-o/search.html?category=${decodeURIComponent(c[1])}`);
+</script>
+</head>
+<body></body>
+</html>
