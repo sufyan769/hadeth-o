@@ -1,69 +1,101 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نتائج التصنيف</title>
-<style>
-body { font-family: sans-serif; background:#f6f6f6; padding:20px; }
-.container { max-width:900px; margin:auto; background:white; padding:25px; border-radius:12px; }
-.hadith-item {
-    background:white; padding:15px; border-radius:8px; margin-bottom:12px;
-    border: 1px solid #ddd; cursor:pointer;
-}
-.hadith-item:hover { background:#eef7ff; }
-.title { font-size:18px; font-weight:bold; margin-bottom:5px; }
-.category-title{ font-size:22px; font-weight:bold; margin-bottom:20px; text-align:center; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نتائج التصنيف</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+    body {
+      font-family: 'Tajawal', sans-serif;
+    }
+    .hadith-item {
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800">
 
-<div class="container">
-    <div id="category-name" class="category-title">جاري التحميل...</div>
-    <div id="results"></div>
+<div class="container mx-auto max-w-4xl px-4 py-8 md:py-12">
+    <div id="category-name" class="text-center mb-8">
+      <p class="text-lg text-gray-500">نتائج التصنيف</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-800">جاري التحميل...</h1>
+    </div>
+
+    <div id="results" class="space-y-4">
+      <!-- Results will be injected here -->
+    </div>
+    
+    <div class="mt-10 text-center">
+      <a href="index.html" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold text-base rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM13.5 10.5h-6" />
+        </svg>
+        <span>رجوع للبحث</span>
+      </a>
+    </div>
 </div>
 
 <script>
-// ✅ اقرأ الكلمة من URL
-const params = new URLSearchParams(window.location.search);
-const keyword = params.get("q");
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const keyword = params.get("q");
+    const categoryNameEl = document.querySelector("#category-name h1");
+    const resultsContainer = document.getElementById("results");
 
-// ✅ ضع عنوان الصفحة
-document.getElementById("category-name").innerText = `نتائج التصنيف: ${keyword}`;
+    if (!keyword) {
+        categoryNameEl.innerText = "لم يتم تحديد تصنيف";
+        return;
+    }
 
-// ✅ API الذي يجلب أحاديث التصنيف
-const apiUrl =
-`https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_category/${encodeURIComponent(keyword)}`;
+    categoryNameEl.innerText = keyword;
 
-fetch(apiUrl)
-  .then(res => res.json())
-  .then(data => {
-      let container = document.getElementById("results");
+    const showLoader = () => {
+        resultsContainer.innerHTML = `
+          <div class="flex justify-center items-center py-10">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="h-10 w-10 text-blue-500 animate-spin">
+              <path clip-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 1.5a8.25 8.25 0 100 16.5 8.25 8.25 0 000-16.5z" fill="currentColor" fill-opacity="0.2"></path>
+              <path d="M12 2.25a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3A.75.75 0 0112 2.25z" fill="currentColor"></path>
+            </svg>
+          </div>`;
+    };
+    
+    showLoader();
 
-      if (!data.items || data.items.length === 0) {
-          container.innerHTML = "<p>لا توجد نتائج.</p>";
-          return;
-      }
-      
-      // In the previous version, the property was `hadeeth_id`. The API now seems to return `id`.
-      // Let's check both for compatibility.
-      const idKey = data.items[0].hasOwnProperty('id') ? 'id' : 'hadeeth_id';
+    const apiUrl = `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_category/${encodeURIComponent(keyword)}`;
 
-      data.items.forEach(h => {
-          container.innerHTML += `
-            <div class="hadith-item" onclick="openDetails(${h[idKey]})">
-                <div class="title">${h.text}</div>
-            </div>
-          `;
+    fetch(apiUrl)
+      .then(res => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.json();
+      })
+      .then(data => {
+          if (!data.items || data.items.length === 0) {
+              resultsContainer.innerHTML = `<div class="text-center py-10 px-4 bg-white rounded-lg shadow-sm">
+                <p class="text-gray-500 text-lg">لا توجد نتائج في هذا التصنيف.</p>
+              </div>`;
+              return;
+          }
+
+          const idKey = data.items[0].hasOwnProperty('id') ? 'id' : 'hadeeth_id';
+
+          const resultsHTML = data.items.map(h => `
+            <article class="hadith-item bg-white p-5 rounded-xl shadow-md border border-gray-200/80 hover:shadow-lg hover:border-blue-300 transition-all duration-300 ease-in-out" onclick="openDetails(${h[idKey]})">
+                <p class="text-gray-700 leading-relaxed text-lg">${h.text}</p>
+            </article>
+          `).join('');
+          resultsContainer.innerHTML = resultsHTML;
+      })
+      .catch(err => {
+          resultsContainer.innerHTML = `<div class="text-center py-10 px-4 bg-white rounded-lg shadow-sm">
+             <p class="text-red-500 text-lg">حدث خطأ أثناء تحميل البيانات.</p>
+           </div>`;
+          console.error(err);
       });
-  })
-  .catch(err => {
-      document.getElementById("results").innerHTML = "<p>حدث خطأ أثناء تحميل البيانات.</p>";
-      console.error(err);
-  });
+});
 
-// ✅ عند الضغط على الحديث → فتح صفحة التفاصيل
-function openDetails(id){
+function openDetails(id) {
     window.location.href = `details.html?id=${id}`;
 }
 </script>
