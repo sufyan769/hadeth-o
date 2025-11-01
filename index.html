@@ -3,43 +3,49 @@
 <head>
 <meta charset="UTF-8" />
 <title>البحث في الأحاديث</title>
+<meta name="description" content="البحث في الأحاديث النبوية الشريفة والفتاوى.">
 <script src="https://cdn.jsdelivr.net/npm/algoliasearch/dist/algoliasearch-lite.umd.js"></script>
 
 <style>
-body { font-family: sans-serif; padding:20px; background:#f8f8f8 }
+body { font-family: sans-serif; padding:20px; background:#f5f5f5 }
 input { width:100%; padding:15px; font-size:20px; border-radius:8px; border:1px solid #ccc; }
 .result { background:white; padding:15px; margin-top:12px; border-radius:10px; cursor:pointer; }
-.result:hover { background:#eef4ff; }
+.result:hover { background:#dfe9ff; }
 </style>
 </head>
 <body>
 
 <input id="searchBox" placeholder="اكتب كلمة للبحث..." />
-
 <div id="results"></div>
 
 <script>
-const APP_ID     = "3XD12I7386";
+const APP_ID = "3XD12I7386";
 const SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";
 const INDEX_NAME = "hadeth-2";
 
 const client = algoliasearch(APP_ID, SEARCH_KEY);
-const index  = client.initIndex(INDEX_NAME);
+const index = client.initIndex(INDEX_NAME);
 
-document.getElementById("searchBox").addEventListener("input", async (e) => {
-    const keyword = e.target.value.trim();
-    const box = document.getElementById("results");
+// ✅ إذا الصفحة فيها ?category=الإيمان → بحث تلقائي
+const category = new URLSearchParams(location.search).get("category");
+if (category) {
+    document.getElementById("searchBox").value = category;
+    runSearch(category);
+}
 
-    if (!keyword) return box.innerHTML = "";
+async function runSearch(keyword) {
+    const res = await index.search(keyword, { hitsPerPage: 50 });
 
-    const res = await index.search(keyword, { hitsPerPage: 20 });
-
-    box.innerHTML = res.hits.map(hit => `
-        <div class="result" onclick="location.href='details.html?id=${hit.objectID}'">
+    document.getElementById("results").innerHTML = res.hits.map(hit =>
+        `<div class="result" onclick="location.href='/hadeth-o/hadith/${hit.objectID}/'">
             ${hit.text}
-        </div>
-    `).join("");
-});
+        </div>`
+    ).join("");
+}
+
+document.getElementById("searchBox").addEventListener("input", e =>
+    runSearch(e.target.value.trim())
+);
 </script>
 </body>
 </html>
