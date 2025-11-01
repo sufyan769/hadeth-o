@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -10,9 +11,10 @@ body { font-family: sans-serif; background:#f6f6f6; margin:0; padding:0; }
 .container {
   max-width: 900px; margin:auto; background:white;
   padding:25px; border-radius:12px; margin-top:25px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
-.label { font-weight:bold; margin-top:15px; }
-.value { margin-bottom:10px; white-space: pre-line; }
+.label { font-weight:bold; margin-top:15px; color: #333; }
+.value { margin-bottom:10px; white-space: pre-line; color: #555; line-height: 1.6;}
 
 .category-badge {
     display:inline-block;
@@ -23,6 +25,7 @@ body { font-family: sans-serif; background:#f6f6f6; margin:0; padding:0; }
     border-radius:6px;
     font-size:14px;
     text-decoration:none;
+    transition: background-color 0.2s;
 }
 .category-badge:hover { background:#0056b3; }
 
@@ -34,7 +37,9 @@ body { font-family: sans-serif; background:#f6f6f6; margin:0; padding:0; }
   text-decoration:none;
   border-radius:8px;
   margin-top:20px;
+  transition: background-color 0.2s;
 }
+.back-btn:hover { background: #00739c; }
 </style>
 </head>
 <body>
@@ -73,48 +78,56 @@ body { font-family: sans-serif; background:#f6f6f6; margin:0; padding:0; }
 </div>
 
 <script>
-// ✅ قراءة ID من الرابط
-const params = new URLSearchParams(window.location.search);
-const id = params.get("id");
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
 
-// ✅ رابط جلب الحديث من Oracle APEX
-const apiUrl =
-  `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_by_id/${id}`;
+    if (!id) {
+        document.getElementById("text").innerText = "لم يتم تحديد حديث لعرضه.";
+        return;
+    }
 
-fetch(apiUrl)
-  .then(res => res.json())
-  .then(data => {
-      if (!data.items || data.items.length === 0) {
-          document.getElementById("text").innerText = "الحديث غير موجود.";
-          return;
-      }
+    const apiUrl = `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_by_id/${id}`;
 
-      const h = data.items[0];
+    fetch(apiUrl)
+      .then(res => {
+          if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+      })
+      .then(data => {
+          if (!data.items || data.items.length === 0) {
+              document.getElementById("text").innerText = "الحديث غير موجود.";
+              return;
+          }
 
-      document.getElementById("text").innerText        = h.text ?? "—";
-      document.getElementById("sharh").innerText       = h.sharh ?? "—";
-      document.getElementById("rawi").innerText        = h.rawi ?? "—";
-      document.getElementById("muhaddith").innerText   = h.muhaddith ?? "—";
-      document.getElementById("source").innerText      = h.source ?? "—";
-      document.getElementById("hukm").innerText        = h.hukm ?? "—";
-      document.getElementById("page_number").innerText = h.page_number ?? "—";
-      document.getElementById("takhrij").innerText     = h.takhrij ?? "—";
+          const h = data.items[0];
 
-      // ✅ التصنيفات → روابط ذكية
-      if (h.categories) {
-        const parts = h.categories.split(" - ");
-        document.getElementById("categories").innerHTML =
-          parts.map(cat =>
-            `<a class="category-badge" href="category.html?q=${encodeURIComponent(cat)}">${cat}</a>`
-          ).join("");
-      } else {
-        document.getElementById("categories").innerHTML = "—";
-      }
-  })
-  .catch(err => {
-      console.error(err);
-      document.getElementById("text").innerText = "حدث خطأ أثناء تحميل البيانات.";
-  });
+          document.getElementById("text").innerText        = h.text ?? "—";
+          document.getElementById("sharh").innerText       = h.sharh ?? "—";
+          document.getElementById("rawi").innerText        = h.rawi ?? "—";
+          document.getElementById("muhaddith").innerText   = h.muhaddith ?? "—";
+          document.getElementById("source").innerText      = h.source ?? "—";
+          document.getElementById("hukm").innerText        = h.hukm ?? "—";
+          document.getElementById("page_number").innerText = h.page_number ?? "—";
+          document.getElementById("takhrij").innerText     = h.takhrij ?? "—";
+
+          if (h.categories) {
+            const parts = h.categories.split(" - ");
+            document.getElementById("categories").innerHTML =
+              parts.map(cat =>
+                `<a class="category-badge" href="index.html?category=${encodeURIComponent(cat)}">${cat}</a>`
+              ).join("");
+          } else {
+            document.getElementById("categories").innerHTML = "—";
+          }
+      })
+      .catch(err => {
+          console.error(err);
+          document.getElementById("text").innerText = "حدث خطأ أثناء تحميل البيانات.";
+      });
+});
 </script>
 
 </body>
