@@ -127,7 +127,7 @@ async function generateAndDisplaySummary(hadith) {
 
     try {
         if (!process.env.API_KEY) {
-            summaryContainer.innerHTML = "<p>ميزة الخلاصة غير متاحة حاليًا. (خطأ في الإعدادات)</p>";
+            summaryContainer.innerHTML = "<p>ميزة الخلاصة غير متاحة حاليًا. مفتاح API غير معرف في بيئة التشغيل.</p>";
             console.error("API_KEY environment variable not set.");
             return;
         }
@@ -150,7 +150,16 @@ ${PROMPT_TEMPLATE}`;
 
     } catch (error) {
         console.error("Error generating summary:", error);
-        summaryContainer.innerHTML = "<p>عذرًا، حدث خطأ أثناء إنشاء الخلاصة. يرجى المحاولة مرة أخرى لاحقًا.</p>";
+        let errorMessage = "عذرًا، حدث خطأ أثناء إنشاء الخلاصة. يرجى المحاولة مرة أخرى لاحقًا.";
+    
+        const errorText = error.toString().toLowerCase();
+        if (errorText.includes("api key not valid") || errorText.includes("400") || errorText.includes("api_key_invalid")) {
+            errorMessage = "فشلت المصادقة. يبدو أن مفتاح API المقدم من البيئة غير صالح أو منتهي الصلاحية.";
+        } else if (errorText.includes("quota")) {
+            errorMessage = "تم تجاوز حصة الاستخدام لمفتاح API. يرجى المحاولة مرة أخرى لاحقًا.";
+        }
+        
+        summaryContainer.innerHTML = `<p>${errorMessage}</p>`;
     }
 }
 
