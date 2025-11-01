@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -25,6 +26,9 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #555;
     }
+    .result-item, .selected-item {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="bg-gray-50">
@@ -41,20 +45,32 @@
       </header>
       
       <div class="max-w-3xl mx-auto">
-        <div class="relative w-full">
-          <span class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-6 w-6 text-gray-400">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-          </span>
-          <input
-            id="searchBox"
-            type="text"
-            placeholder="اكتب كلمة للبحث..."
-            class="w-full text-lg md:text-xl py-3 px-5 pr-12 bg-white border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow duration-200"
-            autofocus
-          />
-        </div>
+        <form id="searchForm" class="flex items-center gap-3">
+          <div class="relative w-full">
+            <span class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-6 w-6 text-gray-400">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </span>
+            <input
+              id="searchBox"
+              type="text"
+              placeholder="اكتب كلمة للبحث..."
+              class="w-full text-lg md:text-xl py-3 px-5 pr-12 bg-white border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow duration-200"
+              autofocus
+            />
+          </div>
+          <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold text-lg rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 flex-shrink-0">
+            بحث
+          </button>
+        </form>
+
+        <section id="selectedHadithsSection" class="mt-12">
+          <h2 class="text-2xl font-bold text-gray-700 mb-4">الأحاديث المختارة</h2>
+          <div id="selectedHadithsContainer" class="space-y-4">
+            <!-- Selected Hadiths will be rendered here -->
+          </div>
+        </section>
         
         <div id="resultsContainer" class="mt-8"></div>
       </div>
@@ -64,8 +80,11 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // --- DOM Elements ---
+      const searchForm = document.getElementById('searchForm');
       const searchBox = document.getElementById('searchBox');
       const resultsContainer = document.getElementById('resultsContainer');
+      const selectedHadithsSection = document.getElementById('selectedHadithsSection');
+      const selectedHadithsContainer = document.getElementById('selectedHadithsContainer');
 
       // --- Algolia Config ---
       const APP_ID = "3XD12I7386";
@@ -73,7 +92,8 @@
       const INDEX_NAME = "hadeth-2";
 
       // --- State ---
-      let debounceTimer;
+      let selectedHadiths = [];
+      const MAX_SELECTED = 10;
 
       // --- Algolia Initialization ---
       if (typeof algoliasearch === 'undefined') {
@@ -84,15 +104,25 @@
       const client = algoliasearch(APP_ID, SEARCH_KEY);
       const index = client.initIndex(INDEX_NAME);
 
+      // --- Local Storage Functions ---
+      const saveSelectedHadiths = () => {
+        localStorage.setItem('selectedHadiths', JSON.stringify(selectedHadiths));
+      };
+
+      const loadSelectedHadiths = () => {
+        const stored = localStorage.getItem('selectedHadiths');
+        if (stored) {
+          selectedHadiths = JSON.parse(stored);
+        }
+      };
+
       // --- UI Rendering Functions ---
       const showLoader = () => {
         resultsContainer.innerHTML = `
           <div class="flex justify-center items-center py-10">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="h-10 w-10 text-blue-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="h-10 w-10 text-blue-500 animate-spin">
               <path clip-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 1.5a8.25 8.25 0 100 16.5 8.25 8.25 0 000-16.5z" fill="currentColor" fill-opacity="0.2"></path>
-              <path d="M12 2.25a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3A.75.75 0 0112 2.25z" fill="currentColor">
-                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"></animateTransform>
-              </path>
+              <path d="M12 2.25a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3A.75.75 0 0112 2.25z" fill="currentColor"></path>
             </svg>
           </div>`;
       };
@@ -100,8 +130,23 @@
       const showInitialMessage = () => {
         resultsContainer.innerHTML = `
           <div class="text-center py-10 px-4 bg-white rounded-lg shadow-sm">
-            <p class="text-gray-500 text-lg">ابدأ بكتابة كلمة في مربع البحث أعلاه لعرض النتائج.</p>
+            <p class="text-gray-500 text-lg">استخدم مربع البحث أعلاه للبحث عن حديث.</p>
           </div>`;
+      };
+      
+      const renderSelectedHadiths = () => {
+        if (selectedHadiths.length === 0) {
+           selectedHadithsContainer.innerHTML = `<div class="text-center py-6 px-4 bg-gray-100 rounded-lg">
+             <p class="text-gray-500">لم تختر أي حديث بعد. انقر على حديث من نتائج البحث لإضافته هنا.</p>
+           </div>`;
+        } else {
+            const itemsHTML = selectedHadiths.map(hadith => `
+              <article class="selected-item bg-white p-5 rounded-xl shadow-md border border-gray-200/80 hover:shadow-lg hover:border-blue-300 transition-all duration-300 ease-in-out" data-id="${hadith.objectID}">
+                <p class="text-gray-700 leading-relaxed text-lg pointer-events-none">${hadith.text}</p>
+              </article>
+            `).join('');
+            selectedHadithsContainer.innerHTML = itemsHTML;
+        }
       };
 
       const showNoResults = (query) => {
@@ -113,14 +158,15 @@
       };
 
       const showError = (message = "حدث خطأ أثناء البحث. يرجى المحاولة مرة أخرى.") => {
-        resultsContainer.innerHTML = `<p class="text-center text-red-500">${message}</p>`;
+        resultsContainer.innerHTML = `<p class="text-center text-red-500 py-10">${message}</p>`;
       };
 
       const renderResults = (hits) => {
         const resultsHTML = hits.map(hit => {
           const content = hit._highlightResult?.text.value || hit.text;
+          const hitData = encodeURIComponent(JSON.stringify(hit));
           return `
-            <article class="bg-white p-5 rounded-xl shadow-md border border-gray-200/80 hover:shadow-lg hover:border-blue-300 transition-all duration-300 ease-in-out">
+            <article class="result-item bg-white p-5 rounded-xl shadow-md border border-gray-200/80 hover:shadow-lg hover:border-blue-300 transition-all duration-300 ease-in-out" data-hit="${hitData}">
               <p class="text-gray-700 leading-relaxed text-lg">
                 ${content.replace(/<em>/g, '<em class="bg-yellow-200 not-italic font-semibold">')}
               </p>
@@ -129,16 +175,31 @@
         
         resultsContainer.innerHTML = `<div class="space-y-4">${resultsHTML}</div>`;
       };
+      
+      // --- Selection Logic ---
+      const selectHadith = (hadithObject) => {
+          if (selectedHadiths.some(h => h.objectID === hadithObject.objectID)) {
+              return;
+          }
+          selectedHadiths.push(hadithObject);
+          if (selectedHadiths.length > MAX_SELECTED) {
+              selectedHadiths.shift();
+          }
+          saveSelectedHadiths();
+          renderSelectedHadiths();
+      };
 
       // --- Main Search Logic ---
       const runSearch = async (query) => {
         const trimmedQuery = query.trim();
 
         if (!trimmedQuery) {
+          selectedHadithsSection.style.display = 'block';
           showInitialMessage();
           return;
         }
 
+        selectedHadithsSection.style.display = 'none';
         showLoader();
 
         try {
@@ -154,20 +215,39 @@
         }
       };
 
-      // --- Event Listener ---
-      searchBox.addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          runSearch(e.target.value);
-        }, 500);
+      // --- Event Listeners ---
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        runSearch(searchBox.value);
+      });
+      
+      resultsContainer.addEventListener('click', (e) => {
+         const resultItem = e.target.closest('.result-item');
+         if (resultItem) {
+             const hitData = JSON.parse(decodeURIComponent(resultItem.dataset.hit));
+             selectHadith(hitData);
+             window.location.href = `details.html?id=${hitData.objectID}`;
+         }
+      });
+      
+      selectedHadithsContainer.addEventListener('click', (e) => {
+          const selectedItem = e.target.closest('.selected-item');
+          if (selectedItem) {
+              const hadithId = selectedItem.dataset.id;
+              window.location.href = `details.html?id=${hadithId}`;
+          }
       });
 
       // --- Initial Load ---
+      loadSelectedHadiths();
+      renderSelectedHadiths();
+      
       const category = new URLSearchParams(window.location.search).get("category");
       if (category) {
         searchBox.value = category;
         runSearch(category);
       } else {
+        selectedHadithsSection.style.display = 'block';
         showInitialMessage();
       }
     });
