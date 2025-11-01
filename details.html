@@ -1,120 +1,84 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تفاصيل الحديث</title>
-  <style>
-    body {
-      font-family: "Arial", sans-serif;
-      background: #f7f7f7;
-      margin: 0;
-      padding: 25px;
-      line-height: 1.9;
-    }
-    .container {
-      max-width: 900px;
-      margin: auto;
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 25px;
-    }
-    .label {
-      font-weight: bold;
-      color: #444;
-      margin-top: 15px;
-    }
-    .value {
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #eee;
-    }
-    .btn {
-      display: inline-block;
-      background: #007bff;
-      padding: 10px 18px;
-      color: white;
-      border-radius: 5px;
-      text-decoration: none;
-      margin-top: 15px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="description" id="metaDesc" content="تفاصيل الحديث">
+<title>تفاصيل الحديث</title>
+
+<style>
+body { font-family: sans-serif; background:#f5f5f5; margin:0; padding:25px; line-height:2 }
+.container { max-width:900px; margin:auto; background:white; padding:25px; border-radius:10px; }
+.label { font-weight:bold; margin-top:15px; display:block; }
+.value { border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px; }
+.tag { background:#007bff; color:white; padding:4px 8px; border-radius:5px; text-decoration:none; margin:2px; display:inline-block; }
+</style>
 </head>
 <body>
-
 <div class="container">
-  <h1>الحديث</h1>
 
-  <div>
-    <div class="label">الحديث:</div>
-    <div id="text" class="value"></div>
+  <h2 id="title">الحديث</h2>
 
-    <div class="label">الشرح:</div>
-    <div id="sharh" class="value"></div>
+  <div class="label">الحديث:</div><div id="text" class="value"></div>
+  <div class="label">الشرح:</div><div id="sharh" class="value"></div>
+  <div class="label">الراوي:</div><div id="rawi" class="value"></div>
+  <div class="label">المحدث:</div><div id="muhaddith" class="value"></div>
+  <div class="label">المصدر:</div><div id="source" class="value"></div>
+  <div class="label">التخريج:</div><div id="takhrij" class="value"></div>
+  <div class="label">الحكم:</div><div id="hukm" class="value"></div>
+  <div class="label">التصنيف:</div><div id="categories" class="value"></div>
 
-    <div class="label">الراوي:</div>
-    <div id="rawi" class="value"></div>
+  <a href="/hadeth-o/search.html" class="tag">🔍 رجوع للبحث</a>
 
-    <div class="label">المحدث:</div>
-    <div id="muhaddith" class="value"></div>
-
-    <div class="label">المصدر:</div>
-    <div id="source" class="value"></div>
-
-    <div class="label">الحكم:</div>
-    <div id="hukm" class="value"></div>
-
-    <div class="label">التخريج:</div>
-    <div id="takhrij" class="value"></div>
-
-    <div class="label">التصنيف:</div>
-    <div id="categories" class="value"></div>
-
-    <br>
-    <a href="index.html" class="btn">رجوع للبحث</a>
-  </div>
 </div>
 
 <script>
-  // 1️⃣ اجلب رقم الحديث من الرابط
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
+// ✅ قراءة id سواء من /hadith/ID/ أو من ?id=
+let id = new URLSearchParams(location.search).get("id");
+if (!id) {
+  const m = location.pathname.match(/\/hadith\/(\d+)\/?/);
+  id = m ? m[1] : null;
+}
 
-  // 2️⃣ رابط API Oracle حسب رقم الحديث
-  const API_URL =
-  `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_by_id/${id}`;
+const API = `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth/search_by_id/${id}`;
 
-  // 3️⃣ اجلب بيانات الحديث
-  fetch(API_URL)
-    .then(res => res.json())
-    .then(data => {
-      const h = data.items?.[0]; // Oracle يرجع البيانات داخل items[]
+fetch(API).then(r => r.json()).then(data => {
+  const h = data.items?.[0];
+  if (!h) { document.getElementById("text").innerText = "الحديث غير موجود"; return; }
 
-      // في حالة لم يوجد الحديث
-      if (!h) {
-        document.getElementById("text").innerText = "الحديث غير موجود.";
-        return;
-      }
+  document.getElementById("text").innerText = h.text || "—";
+  document.getElementById("sharh").innerText = h.sharh || "—";
+  document.getElementById("rawi").innerText = h.rawi || "—";
+  document.getElementById("muhaddith").innerText = h.muhaddith || "—";
+  document.getElementById("source").innerText = h.source || "—";
+  document.getElementById("hukm").innerText = h.hukm || "—";
+  document.getElementById("takhrij").innerText = h.takhrij || "—";
 
-      document.getElementById("text").innerText = h.text || "—";
-      document.getElementById("sharh").innerText = h.sharh || "—";
-      document.getElementById("rawi").innerText = h.rawi || "—";
-      document.getElementById("muhaddith").innerText = h.muhaddith || "—";
-      document.getElementById("source").innerText = h.source || "—";
-      document.getElementById("hukm").innerText = h.hukm || "—";
-      document.getElementById("takhrij").innerText = h.takhrij || "—";
-      document.getElementById("categories").innerText = h.categories || "—";
-    })
-    .catch(err => {
-      document.getElementById("text").innerText = "خطأ في تحميل البيانات.";
-      console.error(err);
-    });
+  // ✅ التصنيفات → تصبح روابط SEO /category/
+  if (h.categories) {
+      document.getElementById("categories").innerHTML =
+      h.categories.split(",").map(c =>
+        `<a class="tag" href="/hadeth-o/category/${encodeURIComponent(c.trim())}/">${c.trim()}</a>`
+      ).join("");
+  }
+
+  // ✅ تحسين SEO
+  document.title = h.text.slice(0, 70);
+  document.getElementById("metaDesc").content = h.sharh || h.text;
+
+  // ✅ Schema.org
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": h.text.slice(0, 110),
+    "articleBody": h.sharh || h.text,
+    "author": h.rawi || "",
+    "inLanguage": "ar"
+  };
+  let s = document.createElement("script");
+  s.type = "application/ld+json";
+  s.textContent = JSON.stringify(schema);
+  document.head.appendChild(s);
+});
 </script>
-
 </body>
 </html>
