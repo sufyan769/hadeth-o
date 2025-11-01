@@ -1,82 +1,160 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>تفاصيل الحديث</title>
-
-<style>
-body { font-family: sans-serif; background:#f6f6f6; margin:0; padding:0; }
-.container {
-  max-width: 900px; margin:auto; background:white;
-  padding:25px; border-radius:12px; margin-top:25px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.label { font-weight:bold; margin-top:15px; color: #333; }
-.value { margin-bottom:10px; white-space: pre-line; color: #555; line-height: 1.6;}
-
-.category-badge {
-    display:inline-block;
-    background:#007bff;
-    color:white;
-    padding:6px 10px;
-    margin:4px;
-    border-radius:6px;
-    font-size:14px;
-    text-decoration:none;
-    transition: background-color 0.2s;
-}
-.category-badge:hover { background:#0056b3; }
-
-.back-btn {
-  display:inline-block;
-  background:#008CBA;
-  color:white !important;
-  padding:10px 16px;
-  text-decoration:none;
-  border-radius:8px;
-  margin-top:20px;
-  transition: background-color 0.2s;
-}
-.back-btn:hover { background: #00739c; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تفاصيل الحديث</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Add ES Module Shim for browser compatibility with import maps -->
+  <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "@google/genai": "https://esm.run/@google/genai"
+    }
+  }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+    body {
+      font-family: 'Tajawal', sans-serif;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800">
 
-<div class="container">
-  <h1 id="hadith-title">الحديث</h1>
+  <div class="container mx-auto max-w-4xl px-4 py-8 md:py-12">
+    <div class="bg-white p-6 md:p-10 rounded-2xl shadow-lg border border-gray-200/80">
+      
+      <h1 id="hadith-title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-6 border-b border-gray-200 pb-4">
+        تفاصيل الحديث
+      </h1>
 
-  <div class="label">الحديث:</div>
-  <div class="value" id="text">جاري التحميل...</div>
+      <div class="space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-gray-700 mb-1">الحديث:</h2>
+          <p class="value text-lg text-gray-600 leading-relaxed whitespace-pre-line" id="text">جاري التحميل...</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-700 mb-1">الشرح:</h2>
+          <p class="value text-lg text-gray-600 leading-relaxed whitespace-pre-line" id="sharh">—</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-700 mb-1">الراوي:</h2>
+          <p class="value text-lg text-gray-600" id="rawi">—</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-700 mb-1">المحدث:</h2>
+          <p class="value text-lg text-gray-600" id="muhaddith">—</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-700 mb-1">المصدر:</h2>
+          <p class="value text-lg text-gray-600" id="source">—</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-700 mb-1">الحكم:</h2>
+          <p class="value text-lg text-gray-600" id="hukm">—</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-700 mb-1">الصفحة او الرقم:</h2>
+          <p class="value text-lg text-gray-600" id="page_number">—</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-700 mb-1">التخريج:</h2>
+          <p class="value text-lg text-gray-600 leading-relaxed whitespace-pre-line" id="takhrij">—</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-700 mb-2">التصنيف:</h2>
+          <div class="value" id="categories">—</div>
+        </div>
+      </div>
+      
+      <div class="mt-8 pt-6 border-t border-gray-200">
+        <h2 class="text-2xl font-bold text-gray-700 mb-4">
+          خلاصة الرواية <span class="text-sm font-medium bg-blue-100 text-blue-800 py-1 px-2 rounded-full align-middle">BETA</span>
+        </h2>
+        <div id="ai-summary" class="bg-gray-100 p-5 rounded-lg text-gray-700 leading-relaxed whitespace-pre-line min-h-[80px]">
+          <div id="summary-loader" class="flex items-center gap-3">
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="h-6 w-6 text-blue-500 animate-spin">
+              <path clip-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 1.5a8.25 8.25 0 100 16.5 8.25 8.25 0 000-16.5z" fill="currentColor" fill-opacity="0.2"></path>
+              <path d="M12 2.25a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3A.75.75 0 0112 2.25z" fill="currentColor"></path>
+            </svg>
+            <span>جاري إنشاء خلاصة بالذكاء الاصطناعي...</span>
+          </div>
+        </div>
+      </div>
 
-  <div class="label">الشرح:</div>
-  <div class="value" id="sharh">—</div>
+      <div class="mt-10 pt-6 border-t border-gray-200">
+        <a href="index.html" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold text-base rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM13.5 10.5h-6" />
+          </svg>
+          <span>رجوع للبحث</span>
+        </a>
+      </div>
+    </div>
+  </div>
 
-  <div class="label">الراوي:</div>
-  <div class="value" id="rawi">—</div>
+<script type="module">
+import { GoogleGenAI } from '@google/genai';
 
-  <div class="label">المحدث:</div>
-  <div class="value" id="muhaddith">—</div>
+const PROMPT_TEMPLATE = `أعد صياغة وصف الحديث على هذا النمط (مختصر – مصادر فقط – لا رأي شخصي):
 
-  <div class="label">المصدر:</div>
-  <div class="value" id="source">—</div>
+أصل الرواية الصحيح
+عن [اسم الصحابي] مرفوعًا: "[نص الحديث]".
+المصادر:
+– [الكتاب] رقم [الرقم]. رابط (إن توفر).
+– …
+الحكم على الإسناد: [صحيح / حسن / ضعيف] واذكر أسماء العلماء فقط.
 
-  <div class="label">الحكم:</div>
-  <div class="value" id="hukm">—</div>
+إذا وُجدت زيادات لا تصح: ضع عنوان (زيادات لا تثبت)
+إذا وُجد شاهد ضعيف: ضع عنوان (شواهد أخرى ضعيفة)
+أختم بخلاصة قصيرة جدًا.
 
-  <div class="label">الصفحة او الرقم:</div>
-  <div class="value" id="page_number">—</div>
+مهم: لا تكتب أي رأي أو تحليل، فقط مصادر وأحكام المحدثين.`;
 
-  <div class="label">التخريج:</div>
-  <div class="value" id="takhrij">—</div>
+async function generateAndDisplaySummary(hadith) {
+    const summaryContainer = document.getElementById("ai-summary");
+    
+    const hadithText = hadith.text;
+    const sourceAndTakhrij = `${hadith.source || ''} - ${hadith.takhrij || ''}`.trim();
+    const ruling = hadith.hukm;
 
-  <div class="label">التصنيف:</div>
-  <div class="value" id="categories">—</div>
+    if (!hadithText || !ruling) {
+        summaryContainer.innerHTML = "<p>لا يمكن إنشاء خلاصة لعدم توفر معلومات كافية.</p>";
+        return;
+    }
 
-  <a href="index.html" class="back-btn">🔍 رجوع للبحث</a>
-</div>
+    try {
+        if (!process.env.API_KEY) {
+            summaryContainer.innerHTML = "<p>ميزة الخلاصة غير متاحة حاليًا. (خطأ في الإعدادات)</p>";
+            console.error("API_KEY environment variable not set.");
+            return;
+        }
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-<script>
+        const fullPrompt = `المدخلات:
+الحديث: ${hadithText}
+المصدر والتخريج: ${sourceAndTakhrij}
+حكم المحدث: ${ruling}
+
+الطلب:
+${PROMPT_TEMPLATE}`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: fullPrompt,
+        });
+
+        summaryContainer.innerHTML = `<p>${response.text}</p>`;
+
+    } catch (error) {
+        console.error("Error generating summary:", error);
+        summaryContainer.innerHTML = "<p>عذرًا، حدث خطأ أثناء إنشاء الخلاصة. يرجى المحاولة مرة أخرى لاحقًا.</p>";
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
@@ -116,15 +194,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const parts = h.categories.split(" - ");
             document.getElementById("categories").innerHTML =
               parts.map(cat =>
-                `<a class="category-badge" href="category.html?q=${encodeURIComponent(cat)}">${cat}</a>`
+                `<a class="inline-block bg-blue-100 text-blue-800 text-sm font-medium mr-2 mb-2 px-3 py-1.5 rounded-full hover:bg-blue-200 transition-colors" href="category.html?q=${encodeURIComponent(cat)}">${cat}</a>`
               ).join("");
           } else {
             document.getElementById("categories").innerHTML = "—";
           }
+          
+          // Generate AI summary
+          generateAndDisplaySummary(h);
       })
       .catch(err => {
           console.error(err);
           document.getElementById("text").innerText = "حدث خطأ أثناء تحميل البيانات.";
+          const summaryContainer = document.getElementById("ai-summary");
+          summaryContainer.innerHTML = "<p>لا يمكن إنشاء خلاصة بسبب خطأ في تحميل بيانات الحديث.</p>"
       });
 });
 </script>
