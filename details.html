@@ -107,7 +107,7 @@
         const renderHadith = (hadith) => {
             const categoriesHtml = hadith.categories 
                 ? hadith.categories.split('-').map(cat => cat.trim()).filter(Boolean).map(cat => 
-                    `<a href="./Category.html?q=${encodeURIComponent(cat)}" class="inline-block bg-amber-100 text-amber-800 text-sm font-medium me-2 px-3 py-1 rounded-full hover:bg-amber-200 transition-colors duration-200 border border-amber-300">
+                    `<a href="./category.html?q=${encodeURIComponent(cat)}" class="inline-block bg-amber-100 text-amber-800 text-sm font-medium me-2 px-3 py-1 rounded-full hover:bg-amber-200 transition-colors duration-200 border border-amber-300">
                         ${cat}
                     </a>`
                 ).join('')
