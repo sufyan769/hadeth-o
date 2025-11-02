@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>أحاديث حسب التصنيف</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
@@ -19,6 +20,14 @@
       @keyframes spin {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
+      }
+      .hadith-card {
+        background-color: #FFFBF2;
+        border: 1px solid #EAE1D0;
+      }
+      .hadith-card:hover {
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+          border-color: #c7a46e;
       }
     </style>
 </head>
@@ -36,9 +45,64 @@
         <div id="results-container">
              <!-- Results will be injected here -->
         </div>
+
+        <section id="shared-random-hadiths-container" class="mt-12">
+           <!-- Shared Random Hadiths will be rendered here -->
+        </section>
     </div>
 
 <script>
+// --- SHARED SCRIPT FOR RANDOM HADITHS ---
+const renderSharedRandomHadiths = async () => {
+    const container = document.getElementById('shared-random-hadiths-container');
+    if (!container) return;
+
+    const APP_ID = "3XD12I7386";
+    const SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";
+    const INDEX_NAME = "hadeth-2";
+    
+    if (typeof algoliasearch === 'undefined') {
+        console.error('Algolia search client not loaded for random hadiths.');
+        container.innerHTML = `<h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2><p class="text-red-500">تعذر تحميل المكون.</p>`;
+        return;
+    }
+    const client = algoliasearch(APP_ID, SEARCH_KEY);
+    const index = client.initIndex(INDEX_NAME);
+    
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2>
+        <div class="flex justify-center items-center py-10">
+            <div class="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>`;
+    try {
+        const randomPage = Math.floor(Math.random() * 50);
+        const { hits } = await index.search('', { hitsPerPage: 30, page: randomPage });
+        const shuffled = hits.sort(() => 0.5 - Math.random());
+        const randomSelection = shuffled.slice(0, 5);
+        
+        if (!randomSelection.length) throw new Error("No random hadiths found.");
+
+        const itemsHTML = randomSelection.map(hadith => `
+          <a href="./details.html?id=${hadith.objectID}" class="block selected-item hadith-card p-5 rounded-xl transition-all duration-200">
+            <p class="text-stone-700 leading-relaxed text-lg">${hadith.text}</p>
+          </a>
+        `).join('');
+
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2>
+            <div class="space-y-4">${itemsHTML}</div>`;
+
+    } catch (err) {
+        console.error("Failed to fetch shared random hadiths:", err);
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2>
+            <div class="text-center py-6 px-4 bg-stone-100/60 rounded-lg">
+                <p class="text-stone-500">تعذر تحميل الاقتراحات.</p>
+            </div>`;
+    }
+};
+
+// --- CATEGORY PAGE SCRIPT ---
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const keyword = params.get("q");
@@ -48,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!keyword) {
         categoryNameSpan.innerText = "لم يتم تحديد تصنيف";
         resultsContainer.innerHTML = '';
+        renderSharedRandomHadiths();
         return;
     }
 
@@ -96,6 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
              <p class="text-red-500 text-lg">حدث خطأ أثناء تحميل البيانات.</p>
            </div>`;
           console.error(err);
+      })
+      .finally(() => {
+          renderSharedRandomHadiths();
       });
 });
 </script>
