@@ -51,7 +51,42 @@
         </section>
     </div>
 
+    <button id="font-size-toggle-btn" class="fixed bottom-4 right-4 bg-amber-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl font-bold hover:bg-amber-700 transition-colors z-50" aria-label="تغيير حجم الخط" title="تغيير حجم الخط">
+      A+
+    </button>
+
 <script>
+// --- FONT SIZE CONTROL SCRIPT ---
+const initFontSizeControl = () => {
+    const toggleBtn = document.getElementById('font-size-toggle-btn');
+    if (!toggleBtn) return;
+
+    const FONT_SIZES = [16, 18, 20, 22]; // Base font sizes in pixels
+    const LS_KEY = 'hadithAppFontSize';
+
+    const applyFontSize = (size) => {
+        document.documentElement.style.fontSize = `${size}px`;
+        localStorage.setItem(LS_KEY, size);
+    };
+    
+    const getCurrentSizeIndex = () => {
+        const currentSize = parseInt(localStorage.getItem(LS_KEY) || FONT_SIZES[0], 10);
+        const index = FONT_SIZES.indexOf(currentSize);
+        return index === -1 ? 0 : index;
+    };
+    
+    const savedSize = localStorage.getItem(LS_KEY);
+    if (savedSize) {
+        applyFontSize(parseInt(savedSize, 10));
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        const currentIndex = getCurrentSizeIndex();
+        const nextIndex = (currentIndex + 1) % FONT_SIZES.length;
+        applyFontSize(FONT_SIZES[nextIndex]);
+    });
+};
+
 // --- SHARED SCRIPT FOR RANDOM HADITHS ---
 const renderSharedRandomHadiths = async () => {
     const container = document.getElementById('shared-random-hadiths-container');
@@ -104,6 +139,8 @@ const renderSharedRandomHadiths = async () => {
 
 // --- CATEGORY PAGE SCRIPT ---
 document.addEventListener('DOMContentLoaded', () => {
+    initFontSizeControl(); // Initialize font size control
+
     const params = new URLSearchParams(window.location.search);
     const keyword = params.get("q");
     const categoryNameSpan = document.getElementById("category-name-span");
