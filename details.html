@@ -42,18 +42,8 @@
         const errorContainer = document.getElementById('error-container');
         const detailsContainer = document.getElementById('details-container');
 
-        const formatSharh = (sharhText) => {
-            if (!sharhText) return '';
-            
-            let text = sharhText.trim().replace('﻿', ''); // Remove leading BOM character
-
-            // This version assumes metadata is NOT in the sharh text and displays sharh cleanly.
-            // The structured data is handled separately in the grid below.
-            return `<p class="text-stone-700 whitespace-pre-wrap leading-loose text-lg">${text}</p>`;
-        }
-
         const createDetailCard = (title, content, isHtml = false) => {
-            if (!content) return '';
+            if (!content || content.trim() === '') return '';
             const contentHtml = isHtml ? content : `<p class="text-stone-700 whitespace-pre-wrap leading-loose text-lg">${content}</p>`;
             return `
                 <div class="border-b border-stone-200 pb-4 mb-4">
@@ -63,6 +53,62 @@
             `;
         };
         
+        const createMetadataBlock = (hadith) => {
+            const metadataPoints = [
+                { label: 'الراوي', value: hadith.rawi },
+                { label: 'المحدث', value: hadith.muhaddith },
+                { label: 'المصدر', value: hadith.source },
+                { label: 'الصفحة أو الرقم', value: hadith.page_number },
+                { label: 'الحكم', value: hadith.hukm },
+                { label: 'التخريج', value: hadith.takhrij },
+            ];
+
+            const itemsHtml = metadataPoints
+                .filter(item => item.value)
+                .map(item => `
+                    <div class="py-2 px-3 bg-stone-100/70 rounded-md flex items-baseline">
+                        <strong class="text-stone-600 font-bold ml-3 flex-shrink-0">${item.label}:</strong>
+                        <span class="text-stone-800">${item.value}</span>
+                    </div>
+                `).join('');
+            
+            if (!itemsHtml) return '';
+
+            return `
+                <div class="border-b border-stone-200 pb-4 mb-6">
+                    <h2 class="text-2xl font-bold text-amber-800 mb-3">بيانات الحديث</h2>
+                    <div class="space-y-2 text-md">
+                        ${itemsHtml}
+                    </div>
+                </div>
+            `;
+        };
+
+        const cleanSharhText = (sharh) => {
+            if (!sharh) return '';
+            let cleaned = sharh.trim().replace('﻿', '');
+            
+            const commonSharhStarters = [
+                'في هذا الحَديثِ', 'في هذا الحديث', 'وهذا الحديث', 'في الحديث',
+                'ومعنى الحديث', 'وهذا بيانٌ', 'وقولُه صلَّى اللهُ', 'والمعنى', 'يبيِّنُ النَّبيُّ',
+                'يُرشِدُ النَّبيُّ', 'يُعلِّمُنا'
+            ].join('|');
+
+            const blockRegex = new RegExp(`(الراوي\\s*:[\\s\\S]*?التخريج\\s*:[\\s\\S]*?)(?=${commonSharhStarters})`);
+            const match = cleaned.match(blockRegex);
+            
+            if (match && match[0]) {
+                 cleaned = cleaned.replace(match[0], '');
+            } else {
+                 const simplerRegex = new RegExp(`(الراوي\\s*:.*?)(${commonSharhStarters})`);
+                 const simpleMatch = cleaned.match(simplerRegex);
+                 if(simpleMatch && simpleMatch[1]) {
+                    cleaned = cleaned.replace(simpleMatch[1], '');
+                 }
+            }
+            return cleaned.trim();
+        };
+
         const renderHadith = (hadith) => {
             const categoriesHtml = hadith.categories 
                 ? hadith.categories.split('-').map(cat => cat.trim()).filter(Boolean).map(cat => 
@@ -72,66 +118,32 @@
                 ).join('')
                 : '';
             
-            const sharhFormattedHtml = formatSharh(hadith.sharh);
+            const cleanedSharh = cleanSharhText(hadith.sharh);
+            const sharhFormattedHtml = `<p class="text-stone-700 whitespace-pre-wrap leading-loose text-lg">${cleanedSharh}</p>`;
+            const metadataHtml = createMetadataBlock(hadith);
 
             const contentHtml = `
                 <div class="bg-[#FFFBF2] rounded-xl shadow-lg p-6 sm:p-8 border-2 border-stone-200">
                     ${createDetailCard("الحديث", hadith.text)}
-                    ${hadith.sharh ? createDetailCard("الشرح", sharhFormattedHtml, true) : ''}
-                    ${createDetailCard("التخريج", hadith.takhrij)}
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6 text-md">
-                        <div class="border-b border-stone-200 pb-2"><strong class="text-stone-600 font-bold ml-2">الراوي:</strong> ${hadith.rawi || 'غير مذكور'}</div>
-                        <div class="border-b border-stone-200 pb-2"><strong class="text-stone-600 font-bold ml-2">المحدث:</strong> ${hadith.muhaddith || 'غير مذكور'}</div>
-                        <div class="border-b border-stone-200 pb-2"><strong class="text-stone-600 font-bold ml-2">المصدر:</strong> ${hadith.source || 'غير مذكور'}</div>
-                        <div class="border-b border-stone-200 pb-2"><strong class="text-stone-600 font-bold ml-2">الحكم:</strong> <span class="font-semibold text-amber-900">${hadith.hukm || 'غير مذكور'}</span></div>
-                        <div class="border-b border-stone-200 pb-2"><strong class="text-stone-600 font-bold ml-2">الرقم أو الصفحة:</strong> ${hadith.page_number || 'غير مذكور'}</div>
-                    </div>
+                    ${metadataHtml}
+                    ${createDetailCard("الشرح", sharhFormattedHtml, true)}
 
                     ${categoriesHtml ? `
-                    <div class="mb-6">
+                    <div class="mt-4 mb-6">
                         <h3 class="text-lg font-bold text-stone-700 mb-3">التصنيفات</h3>
                         <div class="flex flex-wrap gap-2">${categoriesHtml}</div>
                     </div>` : ''}
 
-                    <div class="flex flex-col sm:flex-row gap-4 mt-8">
-                        <a href="./index.html" class="w-full sm:w-auto flex-grow text-center px-6 py-3 bg-stone-600 text-white font-bold rounded-lg hover:bg-stone-700 transition-colors duration-200">
+                    <div class="mt-8">
+                        <a href="./index.html" class="inline-block px-6 py-3 bg-stone-600 text-white font-bold rounded-lg hover:bg-stone-700 transition-colors duration-200">
                             رجوع للبحث
                         </a>
-                        <button id="add-btn" class="w-full sm:w-auto flex-grow text-center px-6 py-3 font-bold rounded-lg transition-colors duration-200 bg-amber-500 text-white hover:bg-amber-600 disabled:bg-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed">
-                            إضافة للمختارة
-                        </button>
                     </div>
                 </div>
             `;
             detailsContainer.innerHTML = contentHtml;
             loaderContainer.classList.add('hidden');
             detailsContainer.classList.remove('hidden');
-
-            const addButton = document.getElementById('add-btn');
-            const selectedHadiths = JSON.parse(localStorage.getItem('selectedHadiths') || '[]');
-            const isAdded = selectedHadiths.some(h => String(h.id) === String(hadith.id));
-            if (isAdded) {
-                addButton.disabled = true;
-                addButton.textContent = 'تمت الإضافة';
-            } else {
-                addButton.addEventListener('click', () => {
-                    let currentSelected = JSON.parse(localStorage.getItem('selectedHadiths') || '[]');
-                    if (!currentSelected.some(h => String(h.id) === String(hadith.id))) {
-                        const hadithSummary = {
-                           id: hadith.id,
-                           text: hadith.text,
-                           muhaddith: hadith.muhaddith,
-                           source: hadith.source,
-                           hukm: hadith.hukm
-                        };
-                        const newSelected = [hadithSummary, ...currentSelected].slice(0, 10);
-                        localStorage.setItem('selectedHadiths', JSON.stringify(newSelected));
-                    }
-                    addButton.disabled = true;
-                    addButton.textContent = 'تمت الإضافة';
-                });
-            }
         };
 
         const showError = (message) => {
