@@ -148,6 +148,25 @@
                 </div>
             `;
         };
+        
+        const createFullSharhCard = (fullSharhText) => {
+            if (!fullSharhText || fullSharhText.trim() === '') return '';
+
+            // Highlight the keywords "اخرجه" and "رواه"
+            const highlightedText = fullSharhText.replace(
+                /(اخرجه|رواه)/g,
+                '<strong class="text-teal-700 font-bold mx-1">$&</strong>'
+            );
+
+            const contentHtml = `<div class="text-stone-600 whitespace-pre-wrap leading-loose text-base bg-stone-50/50 p-4 rounded-md border">${highlightedText}</div>`;
+            
+            return `
+                <div class="border-b border-stone-200 pb-4 mb-4">
+                    <h2 class="text-2xl font-bold text-amber-800 mb-2">الشرح الكامل مع التخريج</h2>
+                    ${contentHtml}
+                </div>
+            `;
+        };
 
         const parseAndCleanSharh = (hadith) => {
             let sharhText = (hadith.sharh || '').trim().replace('﻿', '');
@@ -199,12 +218,14 @@
             
             const sharhFormattedHtml = `<p class="text-stone-700 whitespace-pre-wrap leading-loose text-lg">${cleanedSharh}</p>`;
             const metadataHtml = createMetadataBlock(metadata);
+            const fullSharhHtml = createFullSharhCard(hadith.sharh);
 
             const contentHtml = `
                 <div class="bg-[#FFFBF2] rounded-xl shadow-lg p-6 sm:p-8 border-2 border-stone-200">
                     ${createDetailCard("الحديث", hadith.text)}
                     ${metadataHtml}
                     ${createDetailCard("الشرح", sharhFormattedHtml, true)}
+                    ${fullSharhHtml}
 
                     ${categoriesHtml ? `
                     <div class="mt-4 mb-6">
