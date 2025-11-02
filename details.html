@@ -43,12 +43,51 @@
              <!-- Content will be injected here -->
         </div>
 
+        <section id="related-hadiths-container" class="mt-12">
+           <!-- Related Hadiths will be rendered here -->
+        </section>
+
         <section id="shared-random-hadiths-container" class="mt-12">
            <!-- Shared Random Hadiths will be rendered here -->
         </section>
     </div>
 
+    <button id="font-size-toggle-btn" class="fixed bottom-4 right-4 bg-amber-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl font-bold hover:bg-amber-700 transition-colors z-50" aria-label="تغيير حجم الخط" title="تغيير حجم الخط">
+      A+
+    </button>
+
      <script>
+    // --- FONT SIZE CONTROL SCRIPT ---
+    const initFontSizeControl = () => {
+        const toggleBtn = document.getElementById('font-size-toggle-btn');
+        if (!toggleBtn) return;
+
+        const FONT_SIZES = [16, 18, 20, 22]; // Base font sizes in pixels
+        const LS_KEY = 'hadithAppFontSize';
+
+        const applyFontSize = (size) => {
+            document.documentElement.style.fontSize = `${size}px`;
+            localStorage.setItem(LS_KEY, size);
+        };
+        
+        const getCurrentSizeIndex = () => {
+            const currentSize = parseInt(localStorage.getItem(LS_KEY) || FONT_SIZES[0], 10);
+            const index = FONT_SIZES.indexOf(currentSize);
+            return index === -1 ? 0 : index;
+        };
+        
+        const savedSize = localStorage.getItem(LS_KEY);
+        if (savedSize) {
+            applyFontSize(parseInt(savedSize, 10));
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            const currentIndex = getCurrentSizeIndex();
+            const nextIndex = (currentIndex + 1) % FONT_SIZES.length;
+            applyFontSize(FONT_SIZES[nextIndex]);
+        });
+    };
+
     // --- SHARED SCRIPT FOR RANDOM HADITHS ---
     const renderSharedRandomHadiths = async () => {
         const container = document.getElementById('shared-random-hadiths-container');
@@ -101,7 +140,12 @@
     
     // --- DETAILS PAGE SCRIPT ---
     document.addEventListener('DOMContentLoaded', () => {
+        initFontSizeControl(); // Initialize font size control
+
         const ORDS_API_BASE_URL = "https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth";
+        const ALGOLIA_APP_ID = "3XD12I7386";
+        const ALGOLIA_SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";
+        const ALGOLIA_INDEX_NAME = "hadeth-2";
         
         const loaderContainer = document.getElementById('loader-container');
         const errorContainer = document.getElementById('error-container');
@@ -152,7 +196,6 @@
         const createFullSharhCard = (fullSharhText) => {
             if (!fullSharhText || fullSharhText.trim() === '') return '';
 
-            // Highlight the keywords "اخرجه" and "رواه"
             const highlightedText = fullSharhText.replace(
                 /(اخرجه|رواه)/g,
                 '<strong class="text-teal-700 font-bold mx-1">$&</strong>'
@@ -196,7 +239,6 @@
                     const metadataBlockText = sharhText.substring(blockStartIndex, blockEndIndex);
                     sharhText = sharhText.substring(blockEndIndex).trim();
                 } else {
-                    // Fallback if no clear separator is found - try to remove the common metadata lines
                     const metadataRegex = /الراوي\s*:[\s\S]*?(التخريج\s*:[\s\S]*?($|\n))/;
                     sharhText = sharhText.replace(metadataRegex, '').trim();
                 }
@@ -245,6 +287,52 @@
             detailsContainer.classList.remove('hidden');
         };
 
+        const renderRelatedHadiths = async (currentId, hadithText) => {
+            const container = document.getElementById('related-hadiths-container');
+            if (!container || !hadithText) return;
+
+            if (typeof algoliasearch === 'undefined') {
+                console.error('Algolia search client not loaded for related hadiths.');
+                return;
+            }
+            const client = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
+            const index = client.initIndex(ALGOLIA_INDEX_NAME);
+
+            container.innerHTML = `
+                <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث ذات صلة</h2>
+                <div class="flex justify-center items-center py-10">
+                    <div class="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>`;
+
+            try {
+                const { hits } = await index.search(hadithText, { hitsPerPage: 7 });
+                const relatedHits = hits.filter(hit => hit.objectID !== currentId).slice(0, 6);
+
+                if (relatedHits.length === 0) {
+                    container.innerHTML = ''; // Hide section if no related hadiths found
+                    return;
+                }
+
+                const itemsHTML = relatedHits.map(hadith => `
+                    <a href="./details.html?id=${hadith.objectID}" class="block selected-item hadith-card p-5 rounded-xl transition-all duration-200">
+                        <p class="text-stone-700 leading-relaxed text-lg">${hadith.text}</p>
+                    </a>
+                `).join('');
+
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث ذات صلة</h2>
+                    <div class="space-y-4">${itemsHTML}</div>`;
+
+            } catch (err) {
+                console.error("Failed to fetch related hadiths:", err);
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث ذات صلة</h2>
+                    <div class="text-center py-6 px-4 bg-stone-100/60 rounded-lg">
+                        <p class="text-stone-500">تعذر تحميل الأحاديث ذات الصلة.</p>
+                    </div>`;
+            }
+        };
+
         const showError = (message) => {
             loaderContainer.classList.add('hidden');
             errorContainer.textContent = message;
@@ -269,7 +357,9 @@
                 }
                 const data = await response.json();
                 if (data.items && data.items.length > 0) {
-                    renderHadith(data.items[0]);
+                    const hadith = data.items[0];
+                    renderHadith(hadith);
+                    renderRelatedHadiths(id, hadith.text);
                 } else {
                     showError("لم يتم العثور على الحديث.");
                 }
