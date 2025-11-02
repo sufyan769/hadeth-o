@@ -142,7 +142,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         initFontSizeControl(); // Initialize font size control
 
-        const ORDS_API_BASE_URL = "https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadeeth";
+        const ORDS_API_BASE_URL = "https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadith";
         const ALGOLIA_APP_ID = "3XD12I7386";
         const ALGOLIA_SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";
         const ALGOLIA_INDEX_NAME = "hadeth-2";
@@ -349,7 +349,7 @@
             }
 
             try {
-                const response = await fetch(`${ORDS_API_BASE_URL}/search_by_id/${id}`);
+                const response = await fetch(`${ORDS_API_BASE_URL}/id/${id}`);
                 const contentType = response.headers.get("content-type");
                 
                 if (!response.ok || !contentType || !contentType.includes("application/json")) {
