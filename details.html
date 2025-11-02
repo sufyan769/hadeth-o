@@ -112,7 +112,14 @@
             </div>`;
         try {
             const randomPage = Math.floor(Math.random() * 50);
-            const { hits } = await index.search('', { hitsPerPage: 30, page: randomPage });
+            let { hits } = await index.search('', { hitsPerPage: 30, page: randomPage });
+
+            // Fallback to page 0 if the random page was empty
+            if (hits.length === 0) {
+                const fallbackResult = await index.search('', { hitsPerPage: 30, page: 0 });
+                hits = fallbackResult.hits;
+            }
+            
             const shuffled = hits.sort(() => 0.5 - Math.random());
             const randomSelection = shuffled.slice(0, 5);
             
@@ -212,7 +219,7 @@
         };
 
         const parseAndCleanSharh = (hadith) => {
-            let sharhText = (hadith.sharh || '').trim().replace('﻿', '');
+            let sharhText = (hadith.sharh_text || '').trim().replace('﻿', '');
             const initialMetadata = {
                 rawi: hadith.rawi,
                 muhaddith: hadith.muhaddith,
@@ -260,7 +267,7 @@
             
             const sharhFormattedHtml = `<p class="text-stone-700 whitespace-pre-wrap leading-loose text-lg">${cleanedSharh}</p>`;
             const metadataHtml = createMetadataBlock(metadata);
-            const fullSharhHtml = createFullSharhCard(hadith.sharh);
+            const fullSharhHtml = createFullSharhCard(hadith.sharh_text);
 
             const contentHtml = `
                 <div class="bg-[#FFFBF2] rounded-xl shadow-lg p-6 sm:p-8 border-2 border-stone-200">
