@@ -255,10 +255,20 @@
         };
 
         const renderHadith = (hadith) => {
-            const { cleanedSharh, metadata } = parseAndCleanSharh(hadith);
+            const fullSharhText = [
+                hadith.sharh1,
+                hadith.sharh2,
+                hadith.sharh3,
+                hadith.sharh4,
+                hadith.sharh5,
+                hadith.sharh6
+            ].filter(Boolean).join('\n\n');
+            
+            const tempHadithForParsing = { ...hadith, sharh_text: fullSharhText };
+            const { cleanedSharh, metadata } = parseAndCleanSharh(tempHadithForParsing);
 
             const categoriesHtml = hadith.categories 
-                ? hadith.categories.split('-').map(cat => cat.trim()).filter(Boolean).map(cat => 
+                ? hadith.categories.split('|').map(cat => cat.trim()).filter(Boolean).map(cat => 
                     `<a href="./category.html?q=${encodeURIComponent(cat)}" class="inline-block bg-amber-100 text-amber-800 text-sm font-medium me-2 px-3 py-1 rounded-full hover:bg-amber-200 transition-colors duration-200 border border-amber-300">
                         ${cat}
                     </a>`
@@ -267,7 +277,7 @@
             
             const sharhFormattedHtml = `<p class="text-stone-700 whitespace-pre-wrap leading-loose text-lg">${cleanedSharh}</p>`;
             const metadataHtml = createMetadataBlock(metadata);
-            const fullSharhHtml = createFullSharhCard(hadith.sharh_text);
+            const fullSharhHtml = createFullSharhCard(fullSharhText);
 
             const contentHtml = `
                 <div class="bg-[#FFFBF2] rounded-xl shadow-lg p-6 sm:p-8 border-2 border-stone-200">
