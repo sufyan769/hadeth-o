@@ -356,7 +356,7 @@
             }
 
             try {
-                const response = await fetch(`${ORDS_API_BASE_URL}/id/${id}`);
+                const response = await fetch(`${ORDS_API_BASE_URL}/${id}`);
                 const contentType = response.headers.get("content-type");
                 
                 if (!response.ok || !contentType || !contentType.includes("application/json")) {
