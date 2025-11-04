@@ -242,11 +242,27 @@
       const renderResults = (hits) => {
         const resultsHTML = hits.map(hit => {
           const content = hit._highlightResult?.text.value || hit.text;
+          
+          const metadataParts = [];
+          if (hit.rawi) {
+              metadataParts.push(`<span class="font-bold text-stone-700">الراوي:</span> ${hit.rawi}`);
+          }
+          if (hit.hukm) {
+              metadataParts.push(`<span class="font-bold text-stone-700">الحكم:</span> ${hit.hukm}`);
+          }
+
+          const metadataHtml = metadataParts.length > 0 ? `
+            <div class="mt-4 pt-3 border-t border-stone-200 text-sm text-stone-600">
+                ${metadataParts.join('<span class="mx-2 text-stone-400">|</span>')}
+            </div>
+          ` : '';
+
           return `
             <article class="result-item hadith-card p-5 rounded-xl" data-id="${hit.objectID}">
               <p class="text-stone-700 leading-relaxed text-lg">
                 ${content.replace(/<em>/g, '<em class="bg-amber-200/70 not-italic font-semibold">')}
               </p>
+              ${metadataHtml}
             </article>`;
         }).join('');
         
@@ -268,7 +284,13 @@
         showLoader(resultsContainer);
         resultsContainer.classList.remove('hidden');
         try {
-          const { hits } = await index.search(trimmedQuery, { hitsPerPage: 50 });
+          const { hits } = await index.search(trimmedQuery, { 
+              hitsPerPage: 50,
+              typoTolerance: true, // Enable fuzzy search
+              minWordSizefor1Typo: 4,
+              minWordSizefor2Typos: 8,
+              allowTyposOnNumericTokens: false
+          });
           if (hits.length === 0) {
             showNoResults(trimmedQuery);
             sessionStorage.removeItem('hadithSearchResults');
