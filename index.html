@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>البحث في الأحاديث</title>
-  <meta name="description" content="في رحاب السنة النبوية">
+  <meta name="description" content="البحث في الأحاديث النبوية الشريفة والفتاوى.">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -154,7 +155,14 @@
             </div>`;
         try {
             const randomPage = Math.floor(Math.random() * 50);
-            const { hits } = await index.search('', { hitsPerPage: 30, page: randomPage });
+            let { hits } = await index.search('', { hitsPerPage: 30, page: randomPage });
+
+            // Fallback to page 0 if the random page was empty
+            if (hits.length === 0) {
+                const fallbackResult = await index.search('', { hitsPerPage: 30, page: 0 });
+                hits = fallbackResult.hits;
+            }
+            
             const shuffled = hits.sort(() => 0.5 - Math.random());
             const randomSelection = shuffled.slice(0, 5);
             
@@ -312,6 +320,15 @@
       // --- Initial Load ---
       restoreState();
       renderSharedRandomHadiths();
+
+      // Check if we need to run a search immediately (redirected from details page)
+      if (sessionStorage.getItem('runSearchOnLoad') === 'true') {
+          sessionStorage.removeItem('runSearchOnLoad');
+          const query = searchBox.value;
+          if (query) {
+              runSearch(query);
+          }
+      }
     });
   </script>
 </body>
