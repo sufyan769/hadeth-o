@@ -1,266 +1,297 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>البحث في الأحاديث</title>
-  <meta name="description" content="البحث في الأحاديث النبوية الشريفة والفتاوى.">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Amiri', serif;
-      background-color: #FDF6E3; /* Vintage paper background */
-    }
-    .result-item, .selected-item {
-      cursor: pointer;
-    }
-    .search-input {
-        background-color: #FFFBF2;
-        border-color: #DCD6C7;
-    }
-    .search-input:focus {
-        border-color: #c7a46e;
-        box-shadow: 0 0 0 2px rgba(199, 164, 110, 0.3);
-    }
-    .search-btn {
-        background-color: #a37e4a; /* Muted amber */
-    }
-    .search-btn:hover {
-        background-color: #8a693d;
-    }
-    .hadith-card {
-        background-color: #FFFBF2;
-        border: 1px solid #EAE1D0;
-    }
-    .hadith-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        border-color: #c7a46e;
-    }
-     .animate-spin {
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>موسوعة الحديث</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              amiri: ['Amiri', 'serif'],
+              cairo: ['Cairo', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Amiri', serif;
+      }
+      h1, h2, h3, h4, h5, h6, button, a {
+        font-family: 'Cairo', 'sans-serif';
+      }
+      .loader {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #14b8a6;
+        border-bottom-color: transparent;
+        border-radius: 50%;
+        display: inline-block;
+        box-sizing: border-box;
+        animation: rotation 1s linear infinite;
+      }
+      @keyframes rotation {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      em {
+        background-color: #fef08a; /* bg-yellow-200 */
+        font-style: normal;
+      }
+    </style>
 </head>
-<body class="text-stone-800">
+<body class="bg-gray-50 text-gray-800">
 
-  <div class="min-h-screen">
-    <main class="container mx-auto px-4 py-8 md:py-12">
-      <header class="text-center mb-8">
-        <a href="./index.html" id="home-link" class="text-4xl md:text-5xl font-bold text-stone-800 no-underline hover:text-amber-800 transition-colors">
-          <h1>البحث في الأحاديث</h1>
-        </a>
-        <p class="text-lg text-stone-500 mt-2">البحث في الأحاديث النبوية الشريفة والفتاوى</p>
-      </header>
+    <div id="app-container" class="max-w-5xl mx-auto p-4 md:p-6">
+        <header class="bg-white/80 backdrop-blur-sm sticky top-4 z-10 p-3 rounded-lg shadow-md border border-gray-200">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800">موسوعة الحديث</h1>
+                <button id="font-size-toggle" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors" aria-label="تغيير حجم الخط">
+                    <span>حجم الخط: 16</span>
+                </button>
+            </div>
+        </header>
 
-      <div class="max-w-3xl mx-auto">
-        <form id="search-form" class="flex items-center gap-3">
-          <div class="relative w-full">
-            <span class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-6 w-6 text-stone-400">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </span>
-            <input id="search-input" type="text" placeholder="اكتب كلمة للبحث..." class="search-input w-full text-lg md:text-xl py-3 px-5 pr-12 border rounded-full shadow-sm focus:outline-none transition-shadow duration-200" autofocus />
-          </div>
-          <button type="submit" class="search-btn px-6 py-3 text-white font-semibold text-lg rounded-full hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors duration-200 flex-shrink-0">بحث</button>
-        </form>
+        <main class="mt-4">
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                <form id="search-form">
+                    <input
+                        type="search"
+                        id="search-input"
+                        placeholder="ابحث في نصوص الأحاديث..."
+                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 mb-4 text-lg"
+                    />
+                    <div id="search-buttons" class="flex flex-wrap gap-2 justify-center">
+                        <button type="submit" data-search-type="smart" class="search-btn px-4 py-2 rounded-md transition-colors text-sm md:text-base bg-teal-600 text-white shadow">بحث ذكي</button>
+                        <button type="button" data-search-type="all_words" class="search-btn px-4 py-2 rounded-md transition-colors text-sm md:text-base bg-gray-200 text-gray-700 hover:bg-gray-300">بحث كل الكلمات</button>
+                        <button type="button" data-search-type="exact" class="search-btn px-4 py-2 rounded-md transition-colors text-sm md:text-base bg-gray-200 text-gray-700 hover:bg-gray-300">بحث عن النص المطابق</button>
+                    </div>
+                </form>
+            </div>
 
-        <div id="results-container" class="mt-8">
-          <div class="text-center py-10 px-4 hadith-card rounded-lg">
-            <p class="text-stone-500 text-lg">استخدم مربع البحث أعلاه للبحث عن حديث.</p>
-          </div>
-        </div>
+            <div id="results-container" class="mt-6">
+                <div id="loader" class="text-center p-8"><div class="loader mx-auto"></div></div>
+            </div>
+        </main>
+    </div>
 
-        <section id="random-hadiths-container" class="mt-12">
-          <!-- Random Hadiths will be rendered here -->
-        </section>
-      </div>
-    </main>
-  </div>
-  
-  <button id="font-size-toggle-btn" class="fixed bottom-4 right-4 bg-amber-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl font-bold hover:bg-amber-700 transition-colors z-50" aria-label="تغيير حجم الخط" title="تغيير حجم الخط">
-    A+
-  </button>
-  
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- CONSTANTS ---
-        const ALGOLIA_APP_ID = "3XD12I7386";
-        const ALGOLIA_SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";
-        const ALGOLIA_INDEX_NAME = "ahadith_clean";
+    <script type="module">
+        // --- API CONFIG ---
+        const ALGOLIA_APP_ID = '3XD12I7386';
+        const ALGOLIA_SEARCH_KEY = '89e8e132a05fdb02275f64dec8d14d05';
+        const ALGOLIA_INDEX_NAME = 'ahadith_clean';
+        const ALGOLIA_URL = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX_NAME}/query`;
 
-        // --- ELEMENTS ---
+        // --- UI ELEMENTS ---
         const searchForm = document.getElementById('search-form');
         const searchInput = document.getElementById('search-input');
         const resultsContainer = document.getElementById('results-container');
-        const randomHadithsContainer = document.getElementById('random-hadiths-container');
-        const homeLink = document.getElementById('home-link');
+        const loader = document.getElementById('loader');
+        const searchButtons = document.querySelectorAll('.search-btn');
 
-        let algoliaIndex;
-
-        // --- HELPER FUNCTIONS ---
-        const renderSpinner = (size = 'md') => {
-            const sizeClasses = { sm: 'w-8 h-8', md: 'w-10 h-10', lg: 'w-12 h-12' };
-            return `<div class="flex justify-center items-center py-10"><div class="${sizeClasses[size]} border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>`;
-        };
-
-        const navigateToDetails = (id) => {
-            sessionStorage.setItem('hadithSearchQuery', searchInput.value);
-            window.location.href = `./details.html?id=${id}`;
-        };
+        // --- STATE ---
+        let searchType = 'smart';
+        let isInitialLoad = true;
         
-        // --- FONT SIZE CONTROL ---
-        const initFontSizeControl = () => {
-            const toggleBtn = document.getElementById('font-size-toggle-btn');
-            if (!toggleBtn) return;
-            const FONT_SIZES = [16, 18, 20, 22];
-            const LS_KEY = 'hadithAppFontSize';
-            const applyFontSize = (size) => {
-                document.documentElement.style.fontSize = `${size}px`;
-                localStorage.setItem(LS_KEY, size);
-            };
-            const getCurrentSizeIndex = () => {
-                const currentSize = parseInt(localStorage.getItem(LS_KEY) || FONT_SIZES[0], 10);
-                const index = FONT_SIZES.indexOf(currentSize);
-                return index === -1 ? 0 : index;
-            };
-            const savedSize = localStorage.getItem(LS_KEY);
-            if (savedSize) applyFontSize(parseInt(savedSize, 10));
-            toggleBtn.addEventListener('click', () => {
-                const currentIndex = getCurrentSizeIndex();
-                const nextIndex = (currentIndex + 1) % FONT_SIZES.length;
-                applyFontSize(FONT_SIZES[nextIndex]);
-            });
+        // --- API FUNCTIONS ---
+        const algoliaHeaders = {
+            'X-Algolia-Application-Id': ALGOLIA_APP_ID,
+            'X-Algolia-API-Key': ALGOLIA_SEARCH_KEY,
+            'Content-Type': 'application/json',
         };
 
-        // --- RANDOM HADITHS ---
-        const renderRandomHadiths = async (client) => {
-            const index = client.initIndex(ALGOLIA_INDEX_NAME);
-            randomHadithsContainer.innerHTML = `<h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2>${renderSpinner('sm')}`;
-            try {
-                const randomPage = Math.floor(Math.random() * 50);
-                let { hits } = await index.search('', { hitsPerPage: 30, page: randomPage });
-                if (hits.length === 0) {
-                    const fallbackResult = await index.search('', { hitsPerPage: 30, page: 0 });
-                    hits = fallbackResult.hits;
+        async function searchAhadith(query, type) {
+            let params = { query, hitsPerPage: 20, attributesToHighlight: ['hadith_text'] };
+            switch (type) {
+                case 'smart': params.typoTolerance = false; break;
+                case 'all_words': params.queryType = 'prefixAll'; break;
+                case 'exact': params.query = `"${query}"`; params.advancedSyntax = true; break;
+            }
+            const response = await fetch(ALGOLIA_URL, {
+                method: 'POST',
+                headers: algoliaHeaders,
+                body: JSON.stringify({ params: new URLSearchParams(Object.entries(params).map(([k,v])=>[k,String(v)])).toString() }),
+            });
+            if (!response.ok) throw new Error('Algolia search failed');
+            const data = await response.json();
+            return data.hits;
+        }
+        
+        async function getRandomAhadith(count = 7) {
+            const randomPage = Math.floor(Math.random() * 200);
+            const params = { query: '', hitsPerPage: count, page: randomPage };
+            const response = await fetch(ALGOLIA_URL, {
+                method: 'POST',
+                headers: algoliaHeaders,
+                body: JSON.stringify({ params: new URLSearchParams(Object.entries(params).map(([k,v])=>[k,String(v)])).toString() }),
+            });
+            if (!response.ok) throw new Error('Failed to fetch random ahadith');
+            const data = await response.json();
+            return data.hits;
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function renderResults(results) {
+            if (isInitialLoad) {
+                resultsContainer.innerHTML = `
+                    <h2 class="font-cairo text-xl font-bold mb-4 text-gray-700">أحاديث مختارة</h2>
+                    <div class="space-y-3">
+                        ${results.map(renderInitialHadith).join('')}
+                    </div>
+                `;
+            } else {
+                 if (results.length > 0) {
+                    resultsContainer.innerHTML = `
+                        <h2 class="font-cairo text-xl font-bold mb-4 text-gray-700">نتائج البحث: ${results.length} نتيجة</h2>
+                        ${results.map(renderHadithCard).join('')}
+                    `;
+                } else {
+                    resultsContainer.innerHTML = `<p class="text-center text-gray-500 bg-yellow-100 p-4 rounded-md">لم يتم العثور على نتائج للبحث.</p>`;
                 }
-                const randomSelection = hits.sort(() => 0.5 - Math.random()).slice(0, 5);
-                if (!randomSelection.length) throw new Error("No random hadiths found.");
-                const itemsHTML = randomSelection.map(hadith => `
-                  <div data-id="${hadith.objectID}" class="block selected-item hadith-card p-5 rounded-xl transition-all duration-200">
-                    <p class="text-stone-700 leading-relaxed text-lg">${hadith.text}</p>
-                  </div>
-                `).join('');
-                randomHadithsContainer.innerHTML = `<h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2><div class="space-y-4">${itemsHTML}</div>`;
-                
-                randomHadithsContainer.querySelectorAll('.selected-item').forEach(item => {
-                    item.addEventListener('click', () => navigateToDetails(item.dataset.id));
+            }
+        }
+        
+        function renderInitialHadith(hadith) {
+            return `
+                <a href="/details.html?id=${hadith.objectID}" class="block bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-teal-300 transition-all duration-200">
+                    <p class="line-clamp-2 leading-relaxed text-gray-700">${hadith.hadith_text}</p>
+                </a>
+            `;
+        }
+        
+        function renderHadithCard(hadith) {
+            const highlightedText = hadith._highlightResult?.hadith_text?.value || hadith.hadith_text;
+            return `
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow mb-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="bg-gray-100 text-gray-600 text-sm font-cairo px-3 py-1 rounded-full">${hadith.source}</span>
+                    </div>
+                    <p class="mb-4 leading-loose">${highlightedText}</p>
+                    <div class="text-sm text-gray-500 border-t border-gray-100 pt-4">
+                        <p><span class="font-bold text-gray-700">المحدث:</span> ${hadith.mohdith}</p>
+                        <p><span class="font-bold text-gray-700">الراوي:</span> ${hadith.rawi}</p>
+                        <p><span class="font-bold text-gray-700">الحكم:</span> <span class="text-green-700 font-bold">${hadith.hukm}</span></p>
+                    </div>
+                    <div class="mt-4 text-left">
+                         <a href="/details.html?id=${hadith.objectID}" class="text-teal-600 hover:text-teal-800 font-bold font-cairo">
+                            عرض التفاصيل ←
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleLoader(show) {
+            loader.style.display = show ? 'flex' : 'none';
+            if(show) {
+                resultsContainer.innerHTML = '';
+                resultsContainer.appendChild(loader);
+            }
+        }
+
+        // --- EVENT HANDLERS ---
+        async function handleSearch(query, type) {
+            if (!query.trim()) return;
+            isInitialLoad = false;
+            toggleLoader(true);
+            try {
+                const results = await searchAhadith(query, type);
+                renderResults(results);
+            } catch (err) {
+                resultsContainer.innerHTML = `<p class="text-center text-red-500 bg-red-100 p-4 rounded-md">حدث خطأ أثناء البحث. يرجى المحاولة مرة أخرى.</p>`;
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleSearch(searchInput.value, searchType);
+        });
+
+        searchButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const newSearchType = e.currentTarget.dataset.searchType;
+                searchType = newSearchType;
+
+                // Update button styles
+                searchButtons.forEach(btn => {
+                    btn.classList.remove('bg-teal-600', 'text-white', 'shadow');
+                    btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                    btn.type = 'button';
                 });
+                e.currentTarget.classList.add('bg-teal-600', 'text-white', 'shadow');
+                e.currentTarget.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                
+                // Set the active button to be the submit button
+                const currentSubmitButton = document.querySelector('button[type="submit"]');
+                if(currentSubmitButton) currentSubmitButton.type = 'button';
+                e.currentTarget.type = 'submit';
 
-            } catch (err) {
-                randomHadithsContainer.innerHTML = `<h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2><div class="text-center py-6 px-4 bg-stone-100/60 rounded-lg"><p class="text-stone-500">تعذر تحميل الاقتراحات.</p></div>`;
-            }
-        };
-
-        // --- SEARCH LOGIC ---
-        const runSearch = async (query) => {
-            const trimmedQuery = query.trim();
-            if (!trimmedQuery) {
-                resultsContainer.innerHTML = `<div class="text-center py-10 px-4 hadith-card rounded-lg"><p class="text-stone-500 text-lg">استخدم مربع البحث أعلاه للبحث عن حديث.</p></div>`;
-                sessionStorage.removeItem('hadithSearchResults');
-                sessionStorage.removeItem('hadithSearchQuery');
-                return;
-            }
-            resultsContainer.innerHTML = renderSpinner();
-            try {
-                const { hits } = await algoliaIndex.search(trimmedQuery, { hitsPerPage: 50, typoTolerance: true, minWordSizefor1Typo: 4, minWordSizefor2Typos: 8, allowTyposOnNumericTokens: false });
-                sessionStorage.setItem('hadithSearchResults', JSON.stringify(hits));
-                renderResults(hits, trimmedQuery);
-            } catch (err) {
-                resultsContainer.innerHTML = `<p class="text-center text-red-500 py-10">حدث خطأ أثناء البحث. يرجى المحاولة مرة أخرى.</p>`;
-            }
-        };
-
-        const renderResults = (hits, query) => {
-            if (hits.length === 0) {
-                resultsContainer.innerHTML = `<div class="text-center py-10 px-4 hadith-card rounded-lg"><p class="text-stone-600 text-lg">لم يتم العثور على نتائج للكلمة المفتاحية "${query}".</p></div>`;
-                return;
-            }
-            const resultsHTML = hits.map(hit => {
-                const highlightedText = hit._highlightResult.text.value.replace(/<em>/g, '<em class="bg-amber-200/70 not-italic font-semibold">');
-                let metadataHTML = '';
-                if (hit.rawi || hit.hukm) {
-                    metadataHTML += '<div class="mt-4 pt-3 border-t border-stone-200">';
-                    if (hit.rawi) metadataHTML += `<div class="text-sm text-stone-600"><span class="font-bold text-stone-700">الراوي:</span> ${hit.rawi}</div>`;
-                    if (hit.hukm) metadataHTML += `<div class="text-sm text-stone-600 mt-1"><span class="font-bold text-stone-700">الحكم:</span> ${hit.hukm}</div>`;
-                    metadataHTML += '</div>';
+                // Perform search if not a form submission
+                if (e.currentTarget.type !== 'submit') {
+                   handleSearch(searchInput.value, searchType);
                 }
-                return `<article class="result-item hadith-card p-5 rounded-xl" data-id="${hit.objectID}">
-                            <p class="text-stone-700 leading-relaxed text-lg">${highlightedText}</p>
-                            ${metadataHTML}
-                        </article>`;
-            }).join('');
-            resultsContainer.innerHTML = `<h2 class="text-2xl font-bold text-stone-700 mb-4">نتائج البحث</h2><div class="space-y-4">${resultsHTML}</div>`;
-
-            resultsContainer.querySelectorAll('.result-item').forEach(item => {
-                item.addEventListener('click', () => navigateToDetails(item.dataset.id));
             });
-        };
+        });
+
+        // --- FONT SIZE LOGIC ---
+        const fontSizes = [
+            { size: 16, class: 'text-base' }, { size: 18, class: 'text-lg' },
+            { size: 20, class: 'text-xl' }, { size: 24, class: 'text-2xl' },
+        ];
+        let currentFontSizeIndex = 0;
+
+        function applyFontSize(index) {
+            const appContainer = document.getElementById('app-container');
+            const toggleButton = document.getElementById('font-size-toggle');
+            fontSizes.forEach(fs => appContainer.classList.remove(fs.class));
+            appContainer.classList.add(fontSizes[index].class);
+            toggleButton.querySelector('span').textContent = `حجم الخط: ${fontSizes[index].size}`;
+            localStorage.setItem('hadithAppFontSize', fontSizes[index].size.toString());
+            currentFontSizeIndex = index;
+        }
 
         // --- INITIALIZATION ---
-        const init = () => {
-            if (typeof algoliasearch === 'undefined') {
-                resultsContainer.innerHTML = '<p class="text-center text-red-500">لا يمكن تحميل خدمة البحث.</p>';
-                return;
-            }
-            const client = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
-            algoliaIndex = client.initIndex(ALGOLIA_INDEX_NAME);
-
-            initFontSizeControl();
-            renderRandomHadiths(client);
-            
-            searchForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                sessionStorage.setItem('hadithSearchQuery', searchInput.value);
-                runSearch(searchInput.value);
+        document.addEventListener('DOMContentLoaded', async () => {
+             // Font size setup
+            const savedSize = localStorage.getItem('hadithAppFontSize');
+            const initialIndex = savedSize ? fontSizes.findIndex(fs => fs.size.toString() === savedSize) : 0;
+            applyFontSize(initialIndex !== -1 ? initialIndex : 0);
+            document.getElementById('font-size-toggle').addEventListener('click', () => {
+                const nextIndex = (currentFontSizeIndex + 1) % fontSizes.length;
+                applyFontSize(nextIndex);
             });
             
-            homeLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                searchInput.value = '';
-                sessionStorage.removeItem('hadithSearchQuery');
-                sessionStorage.removeItem('hadithSearchResults');
-                resultsContainer.innerHTML = `<div class="text-center py-10 px-4 hadith-card rounded-lg"><p class="text-stone-500 text-lg">استخدم مربع البحث أعلاه للبحث عن حديث.</p></div>`;
-                window.location.href = './index.html';
-            });
+            // Check for search query in URL
+            const params = new URLSearchParams(window.location.search);
+            const queryFromUrl = params.get('query');
             
-            // Restore state from session
-            const savedQuery = sessionStorage.getItem('hadithSearchQuery');
-            const savedResults = sessionStorage.getItem('hadithSearchResults');
-            if (savedQuery) {
-                searchInput.value = savedQuery;
-                if (savedResults) {
-                    try {
-                        renderResults(JSON.parse(savedResults), savedQuery);
-                    } catch (e) {
-                         sessionStorage.removeItem('hadithSearchResults');
-                    }
-                } else {
-                    runSearch(savedQuery);
+            if (queryFromUrl) {
+                 searchInput.value = decodeURIComponent(queryFromUrl);
+                 await handleSearch(decodeURIComponent(queryFromUrl), searchType);
+            } else {
+                // Initial random load
+                isInitialLoad = true;
+                toggleLoader(true);
+                try {
+                    const results = await getRandomAhadith();
+                    renderResults(results);
+                } catch (err) {
+                    resultsContainer.innerHTML = `<p class="text-center text-red-500 bg-red-100 p-4 rounded-md">حدث خطأ أثناء جلب الأحاديث. يرجى المحاولة مرة أخرى.</p>`;
+                } finally {
+                    toggleLoader(false);
                 }
             }
-        };
+        });
 
-        init();
-    });
-  </script>
+    </script>
 </body>
 </html>
