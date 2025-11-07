@@ -88,6 +88,8 @@
         const ALGOLIA_SEARCH_KEY = '89e8e132a05fdb02275f64dec8d14d05';
         const ALGOLIA_INDEX_NAME = 'ahadith_clean';
         const ALGOLIA_URL = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX_NAME}/query`;
+        const ORACLE_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN';
+
 
         // --- UI ELEMENTS ---
         const searchForm = document.getElementById('search-form');
@@ -125,16 +127,19 @@
         }
         
         async function getRandomAhadith(count = 7) {
-            const randomPage = Math.floor(Math.random() * 200);
-            const params = { query: '', hitsPerPage: count, page: randomPage };
-            const response = await fetch(ALGOLIA_URL, {
-                method: 'POST',
-                headers: algoliaHeaders,
-                body: JSON.stringify(params),
-            });
-            if (!response.ok) throw new Error('Failed to fetch random ahadith');
+            const defaultCategory = 'إيمان';
+            const response = await fetch(`${ORACLE_BASE_URL}/hadith/categories/${encodeURIComponent(defaultCategory)}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch ahadith for category');
+            }
             const data = await response.json();
-            return data.hits;
+            const items = data.items || [];
+            // Shuffle and pick `count` items
+            for (let i = items.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [items[i], items[j]] = [items[j], items[i]];
+            }
+            return items.slice(0, count);
         }
 
         // --- RENDER FUNCTIONS ---
@@ -160,7 +165,7 @@
         
         function renderInitialHadith(hadith) {
             return `
-                <a href="/details.html?id=${hadith.objectID}" class="block bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-teal-300 transition-all duration-200">
+                <a href="/hadeth-o/details.html?id=${hadith.id}" class="block bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-teal-300 transition-all duration-200">
                     <p class="line-clamp-2 leading-relaxed text-gray-700">${hadith.hadith_text}</p>
                 </a>
             `;
@@ -180,7 +185,7 @@
                         <p><span class="font-bold text-gray-700">الحكم:</span> <span class="text-green-700 font-bold">${hadith.hukm}</span></p>
                     </div>
                     <div class="mt-4 text-left">
-                         <a href="/details.html?id=${hadith.objectID}" class="text-teal-600 hover:text-teal-800 font-bold font-cairo">
+                         <a href="/hadeth-o/details.html?id=${hadith.objectID}" class="text-teal-600 hover:text-teal-800 font-bold font-cairo">
                             عرض التفاصيل ←
                         </a>
                     </div>
