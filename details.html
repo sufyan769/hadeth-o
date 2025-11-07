@@ -47,6 +47,16 @@
         <section id="related-hadiths-container" class="mt-12">
            <!-- Related Hadiths will be rendered here -->
         </section>
+        
+        <div id="show-all-related-container" class="mt-4 text-center hidden">
+            <button id="show-all-related-btn" class="px-6 py-3 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition-colors duration-200">
+                عرض كل الروايات المشابهة
+            </button>
+        </div>
+
+        <div id="full-related-hadiths-results" class="mt-8 space-y-6">
+            <!-- Full related hadiths will be rendered here -->
+        </div>
 
         <section id="shared-random-hadiths-container" class="mt-12">
            <!-- Shared Random Hadiths will be rendered here -->
@@ -218,6 +228,8 @@
         const errorContainer = document.getElementById('error-container');
         const detailsContainer = document.getElementById('details-container');
 
+        let relatedHadithHits = [];
+
         const createDetailCard = (title, content, isHtml = false) => {
             if (!content || content.trim() === '') return '';
             const contentHtml = isHtml ? content : `<p class="text-stone-700 whitespace-pre-wrap leading-loose text-lg">${content}</p>`;
@@ -366,6 +378,7 @@
 
         const renderRelatedHadiths = async (currentId, hadithText) => {
             const container = document.getElementById('related-hadiths-container');
+            const showAllContainer = document.getElementById('show-all-related-container');
             if (!container || !hadithText) return;
 
             if (typeof algoliasearch === 'undefined') {
@@ -384,9 +397,12 @@
             try {
                 const { hits } = await index.search(hadithText, { hitsPerPage: 7 });
                 const relatedHits = hits.filter(hit => hit.objectID !== currentId).slice(0, 6);
+                
+                relatedHadithHits = relatedHits; // Store for the "Show All" button
 
                 if (relatedHits.length === 0) {
                     container.innerHTML = ''; // Hide section if no related hadiths found
+                    showAllContainer.classList.add('hidden');
                     return;
                 }
 
@@ -399,9 +415,12 @@
                 container.innerHTML = `
                     <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث ذات صلة</h2>
                     <div class="space-y-4">${itemsHTML}</div>`;
+                
+                showAllContainer.classList.remove('hidden');
 
             } catch (err) {
                 console.error("Failed to fetch related hadiths:", err);
+                showAllContainer.classList.add('hidden');
                 container.innerHTML = `
                     <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث ذات صلة</h2>
                     <div class="text-center py-6 px-4 bg-stone-100/60 rounded-lg">
@@ -444,7 +463,8 @@
                 showError(err.message);
             }
         };
-
+        
+        // --- EVENT LISTENERS ---
         detailsContainer.addEventListener('click', (e) => {
             if (e.target.id === 'logical-search-btn' || e.target.closest('#logical-search-btn')) {
                 const button = e.target.closest('#logical-search-btn');
@@ -455,6 +475,58 @@
                     sessionStorage.setItem('runSearchOnLoad', 'true');
                     window.location.href = './index.html';
                 }
+            }
+        });
+
+        const showAllBtn = document.getElementById('show-all-related-btn');
+        const fullResultsContainer = document.getElementById('full-related-hadiths-results');
+
+        showAllBtn.addEventListener('click', async () => {
+            showAllBtn.parentElement.classList.add('hidden');
+            fullResultsContainer.innerHTML = `
+                <div class="flex justify-center items-center py-10">
+                    <div class="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>`;
+
+            if (relatedHadithHits.length === 0) {
+                fullResultsContainer.innerHTML = '<p class="text-center text-stone-500">لا توجد روايات أخرى لعرضها.</p>';
+                return;
+            }
+
+            try {
+                const fetchPromises = relatedHadithHits.map(hit => 
+                    fetch(`${ORDS_API_BASE_URL}/${hit.objectID}`)
+                        .then(res => res.ok ? res.json() : null)
+                );
+
+                const results = await Promise.all(fetchPromises);
+
+                const hadiths = results
+                    .filter(data => data && data.items && data.items.length > 0)
+                    .map(data => data.items[0]);
+                
+                if (hadiths.length === 0) {
+                    throw new Error("Could not fetch details for related hadiths.");
+                }
+
+                const fullHadithsHtml = hadiths.map(hadith => {
+                    const metadataHtml = createMetadataBlock(hadith);
+                    return `
+                        <div class="hadith-card rounded-xl shadow-md p-6 border-2 border-stone-200">
+                            <div class="border-b border-stone-200 pb-4 mb-4">
+                                <h2 class="text-2xl font-bold text-amber-800 mb-2">الحديث</h2>
+                                <p class="text-stone-700 whitespace-pre-wrap leading-loose text-lg">${hadith.text}</p>
+                            </div>
+                            ${metadataHtml}
+                        </div>
+                    `;
+                }).join('');
+                
+                fullResultsContainer.innerHTML = fullHadithsHtml;
+
+            } catch (error) {
+                console.error('Failed to fetch full related hadiths:', error);
+                fullResultsContainer.innerHTML = '<p class="text-center text-red-500">حدث خطأ أثناء تحميل الروايات الكاملة.</p>';
             }
         });
 
