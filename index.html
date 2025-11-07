@@ -117,7 +117,7 @@
             const response = await fetch(ALGOLIA_URL, {
                 method: 'POST',
                 headers: algoliaHeaders,
-                body: JSON.stringify({ params: new URLSearchParams(Object.entries(params).map(([k,v])=>[k,String(v)])).toString() }),
+                body: JSON.stringify(params),
             });
             if (!response.ok) throw new Error('Algolia search failed');
             const data = await response.json();
@@ -130,7 +130,7 @@
             const response = await fetch(ALGOLIA_URL, {
                 method: 'POST',
                 headers: algoliaHeaders,
-                body: JSON.stringify({ params: new URLSearchParams(Object.entries(params).map(([k,v])=>[k,String(v)])).toString() }),
+                body: JSON.stringify(params),
             });
             if (!response.ok) throw new Error('Failed to fetch random ahadith');
             const data = await response.json();
