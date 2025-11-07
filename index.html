@@ -155,11 +155,16 @@
                 const randomSelection = hits.sort(() => 0.5 - Math.random()).slice(0, 5);
                 if (!randomSelection.length) throw new Error("No random hadiths found.");
                 const itemsHTML = randomSelection.map(hadith => `
-                  <div onclick="navigateToDetails('${hadith.objectID}')" class="block selected-item hadith-card p-5 rounded-xl transition-all duration-200">
+                  <div data-id="${hadith.objectID}" class="block selected-item hadith-card p-5 rounded-xl transition-all duration-200">
                     <p class="text-stone-700 leading-relaxed text-lg">${hadith.text}</p>
                   </div>
                 `).join('');
                 randomHadithsContainer.innerHTML = `<h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2><div class="space-y-4">${itemsHTML}</div>`;
+                
+                randomHadithsContainer.querySelectorAll('.selected-item').forEach(item => {
+                    item.addEventListener('click', () => navigateToDetails(item.dataset.id));
+                });
+
             } catch (err) {
                 randomHadithsContainer.innerHTML = `<h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2><div class="text-center py-6 px-4 bg-stone-100/60 rounded-lg"><p class="text-stone-500">تعذر تحميل الاقتراحات.</p></div>`;
             }
@@ -198,12 +203,16 @@
                     if (hit.hukm) metadataHTML += `<div class="text-sm text-stone-600 mt-1"><span class="font-bold text-stone-700">الحكم:</span> ${hit.hukm}</div>`;
                     metadataHTML += '</div>';
                 }
-                return `<article class="result-item hadith-card p-5 rounded-xl" onclick="navigateToDetails('${hit.objectID}')">
+                return `<article class="result-item hadith-card p-5 rounded-xl" data-id="${hit.objectID}">
                             <p class="text-stone-700 leading-relaxed text-lg">${highlightedText}</p>
                             ${metadataHTML}
                         </article>`;
             }).join('');
             resultsContainer.innerHTML = `<h2 class="text-2xl font-bold text-stone-700 mb-4">نتائج البحث</h2><div class="space-y-4">${resultsHTML}</div>`;
+
+            resultsContainer.querySelectorAll('.result-item').forEach(item => {
+                item.addEventListener('click', () => navigateToDetails(item.dataset.id));
+            });
         };
 
         // --- INITIALIZATION ---
