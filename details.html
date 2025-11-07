@@ -112,6 +112,16 @@
             return data.items[0];
         }
 
+        async function getHadithFromAlgolia(id) {
+            const url = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX_NAME}/${id}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: algoliaHeaders,
+            });
+            if (!response.ok) return null; // Gracefully handle not found
+            return await response.json();
+        }
+
         async function getSimilarAhadith(query, count = 5) {
             const params = { query, hitsPerPage: count };
             const response = await fetch(ALGOLIA_URL, {
@@ -129,7 +139,7 @@
             const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
             const explanation = [hadith.sharh1, hadith.sharh2, hadith.sharh3, hadith.sharh4, hadith.sharh5, hadith.sharh6]
                 .filter(Boolean).join('<br/><br/>');
-            const categories = hadith.categories ? hadith.categories.split(',').map(c => c.trim()) : [];
+            const categories = hadith.categories ? hadith.categories.split('|').map(c => c.trim()) : [];
 
             detailsContainer.innerHTML = `
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -308,18 +318,51 @@ ${sharh || 'لا يوجد شرح متاح.'}
             }
 
             try {
-                hadithDetail = await getHadithDetails(hadithId);
-                if (hadithDetail) {
-                    const hadithText = hadithDetail.text || hadithDetail.hadith_text || hadithDetail.hadith;
+                const [oracleResult, algoliaResult] = await Promise.all([
+                    getHadithDetails(hadithId).catch(e => null),
+                    getHadithFromAlgolia(hadithId).catch(e => null)
+                ]);
+
+                if (!oracleResult && !algoliaResult) {
+                    showError('لم يتم العثور على الحديث.');
+                    toggleLoader(false);
+                    return;
+                }
+
+                // Create a final, merged hadith object.
+                hadithDetail = {};
+
+                // Content fields: prefer Oracle (full details), fallback to Algolia
+                hadithDetail.text = oracleResult?.text || algoliaResult?.text;
+                hadithDetail.sharh1 = oracleResult?.sharh1;
+                hadithDetail.sharh2 = oracleResult?.sharh2;
+                hadithDetail.sharh3 = oracleResult?.sharh3;
+                hadithDetail.sharh4 = oracleResult?.sharh4;
+                hadithDetail.sharh5 = oracleResult?.sharh5;
+                hadithDetail.sharh6 = oracleResult?.sharh6;
+                hadithDetail.page_number = oracleResult?.page_number;
+                hadithDetail.takhrij = oracleResult?.takhrij;
+                hadithDetail.categories = oracleResult?.categories;
+                
+                // Metadata fields: prefer Algolia (more accurate), fallback to Oracle
+                hadithDetail.rawi = algoliaResult?.rawi || oracleResult?.rawi;
+                hadithDetail.muhaddith = algoliaResult?.muhaddith || oracleResult?.muhaddith;
+                hadithDetail.hukm = algoliaResult?.hukm || oracleResult?.hukm;
+                hadithDetail.source = algoliaResult?.source || oracleResult?.source;
+                
+                const hadithText = hadithDetail.text || hadithDetail.hadith_text || hadithDetail.hadith;
+
+                if (hadithText) {
                     renderDetailsPage(hadithDetail);
                     document.title = `${hadithText.substring(0, 50)}... - موسوعة الحديث`;
 
                     // Fetch similar in background
                     const similarData = await getSimilarAhadith(hadithText, 6);
-                    similarAhadith = similarData.filter(h => h.objectID !== hadithId).slice(0, 5);
+                    const currentHadithId = algoliaResult?.objectID || oracleResult?.id;
+                    similarAhadith = similarData.filter(h => h.objectID != currentHadithId).slice(0, 5);
                     renderSimilarSection(similarAhadith);
                 } else {
-                    showError('لم يتم العثور على الحديث.');
+                    showError('نص الحديث غير متوفر.');
                 }
             } catch (error) {
                 console.error(error);
