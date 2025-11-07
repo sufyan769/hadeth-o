@@ -1,209 +1,138 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>أحاديث حسب التصنيف</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'Amiri', serif;
-        background-color: #FDF6E3; /* Vintage paper background */
-      }
-      .animate-spin {
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-      .hadith-card {
-        background-color: #FFFBF2;
-        border: 1px solid #EAE1D0;
-      }
-      .hadith-card:hover {
-          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          border-color: #c7a46e;
-      }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>أحاديث حسب التصنيف</title>
+  <meta name="description" content="البحث في الأحاديث النبوية الشريفة والفتاوى.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Amiri', serif;
+      background-color: #FDF6E3; /* Vintage paper background */
+    }
+     .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-<body>
-    <div class="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-stone-800">
-                أحاديث في: <span id="category-name-span" class="text-amber-700">جاري التحميل...</span>
-            </h1>
-            <a href="./index.html" class="px-4 py-2 bg-stone-200 text-stone-800 font-semibold rounded-lg hover:bg-stone-300 transition-colors">
-                &rarr; رجوع للبحث
-            </a>
-        </div>
-        
-        <div id="results-container">
-             <!-- Results will be injected here -->
-        </div>
+<body class="text-stone-800">
 
-        <section id="shared-random-hadiths-container" class="mt-12">
-           <!-- Shared Random Hadiths will be rendered here -->
-        </section>
+  <main class="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-stone-800">
+            أحاديث في: <span id="category-name" class="text-amber-700">...</span>
+        </h1>
+        <a href="./index.html" class="px-4 py-2 bg-stone-200 text-stone-800 font-semibold rounded-lg hover:bg-stone-300 transition-colors">
+            &rarr; رجوع للبحث
+        </a>
     </div>
 
-    <button id="font-size-toggle-btn" class="fixed bottom-4 right-4 bg-amber-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl font-bold hover:bg-amber-700 transition-colors z-50" aria-label="تغيير حجم الخط" title="تغيير حجم الخط">
-      A+
-    </button>
+    <div id="results-container">
+        <!-- Results will be rendered here -->
+    </div>
+  </main>
+  
+  <button id="font-size-toggle-btn" class="fixed bottom-4 right-4 bg-amber-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl font-bold hover:bg-amber-700 transition-colors z-50" aria-label="تغيير حجم الخط" title="تغيير حجم الخط">
+    A+
+  </button>
 
-<script>
-// --- FONT SIZE CONTROL SCRIPT ---
-const initFontSizeControl = () => {
-    const toggleBtn = document.getElementById('font-size-toggle-btn');
-    if (!toggleBtn) return;
-
-    const FONT_SIZES = [16, 18, 20, 22]; // Base font sizes in pixels
-    const LS_KEY = 'hadithAppFontSize';
-
-    const applyFontSize = (size) => {
-        document.documentElement.style.fontSize = `${size}px`;
-        localStorage.setItem(LS_KEY, size);
-    };
-    
-    const getCurrentSizeIndex = () => {
-        const currentSize = parseInt(localStorage.getItem(LS_KEY) || FONT_SIZES[0], 10);
-        const index = FONT_SIZES.indexOf(currentSize);
-        return index === -1 ? 0 : index;
-    };
-    
-    const savedSize = localStorage.getItem(LS_KEY);
-    if (savedSize) {
-        applyFontSize(parseInt(savedSize, 10));
-    }
-
-    toggleBtn.addEventListener('click', () => {
-        const currentIndex = getCurrentSizeIndex();
-        const nextIndex = (currentIndex + 1) % FONT_SIZES.length;
-        applyFontSize(FONT_SIZES[nextIndex]);
-    });
-};
-
-// --- SHARED SCRIPT FOR RANDOM HADITHS ---
-const renderSharedRandomHadiths = async () => {
-    const container = document.getElementById('shared-random-hadiths-container');
-    if (!container) return;
-
-    const APP_ID = "3XD12I7386";
-    const SEARCH_KEY = "89e8e132a05fdb02275f64dec8d14d05";
-    const INDEX_NAME = "ahadith_clean";
-    
-    if (typeof algoliasearch === 'undefined') {
-        console.error('Algolia search client not loaded for random hadiths.');
-        container.innerHTML = `<h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2><p class="text-red-500">تعذر تحميل المكون.</p>`;
-        return;
-    }
-    const client = algoliasearch(APP_ID, SEARCH_KEY);
-    const index = client.initIndex(INDEX_NAME);
-    
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2>
-        <div class="flex justify-center items-center py-10">
-            <div class="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>`;
-    try {
-        const randomPage = Math.floor(Math.random() * 50);
-        const { hits } = await index.search('', { hitsPerPage: 30, page: randomPage });
-        const shuffled = hits.sort(() => 0.5 - Math.random());
-        const randomSelection = shuffled.slice(0, 5);
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONSTANTS ---
+        const ORDS_API_BASE_URL = "https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadith";
         
-        if (!randomSelection.length) throw new Error("No random hadiths found.");
+        // --- ELEMENTS ---
+        const categoryNameEl = document.getElementById('category-name');
+        const resultsContainer = document.getElementById('results-container');
 
-        const itemsHTML = randomSelection.map(hadith => `
-          <a href="./details.html?id=${hadith.objectID}" class="block selected-item hadith-card p-5 rounded-xl transition-all duration-200">
-            <p class="text-stone-700 leading-relaxed text-lg">${hadith.text}</p>
-          </a>
-        `).join('');
+        // --- HELPER FUNCTIONS ---
+        const renderSpinner = (size = 'md') => {
+            const sizeClasses = { sm: 'w-8 h-8', md: 'w-10 h-10', lg: 'w-12 h-12' };
+            return `<div class="flex justify-center items-center py-10"><div class="${sizeClasses[size]} border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>`;
+        };
 
-        container.innerHTML = `
-            <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2>
-            <div class="space-y-4">${itemsHTML}</div>`;
+        const renderError = (message) => {
+            resultsContainer.innerHTML = `<div class="text-center py-10 px-4 bg-[#FFFBF2] rounded-lg shadow-sm"><p class="text-red-500 text-lg">${message}</p></div>`;
+        };
+        
+        // --- FONT SIZE CONTROL ---
+        const initFontSizeControl = () => {
+            const toggleBtn = document.getElementById('font-size-toggle-btn');
+            if (!toggleBtn) return;
+            const FONT_SIZES = [16, 18, 20, 22];
+            const LS_KEY = 'hadithAppFontSize';
+            const applyFontSize = (size) => {
+                document.documentElement.style.fontSize = `${size}px`;
+                localStorage.setItem(LS_KEY, size);
+            };
+            const getCurrentSizeIndex = () => {
+                const currentSize = parseInt(localStorage.getItem(LS_KEY) || FONT_SIZES[0], 10);
+                const index = FONT_SIZES.indexOf(currentSize);
+                return index === -1 ? 0 : index;
+            };
+            const savedSize = localStorage.getItem(LS_KEY);
+            if (savedSize) applyFontSize(parseInt(savedSize, 10));
+            toggleBtn.addEventListener('click', () => {
+                const currentIndex = getCurrentSizeIndex();
+                const nextIndex = (currentIndex + 1) % FONT_SIZES.length;
+                applyFontSize(FONT_SIZES[nextIndex]);
+            });
+        };
 
-    } catch (err) {
-        console.error("Failed to fetch shared random hadiths:", err);
-        container.innerHTML = `
-            <h2 class="text-2xl font-bold text-stone-700 mb-4">أحاديث مختارة عشوائياً</h2>
-            <div class="text-center py-6 px-4 bg-stone-100/60 rounded-lg">
-                <p class="text-stone-500">تعذر تحميل الاقتراحات.</p>
-            </div>`;
-    }
-};
+        // --- MAIN LOGIC ---
+        const loadCategoryHadiths = async () => {
+            resultsContainer.innerHTML = renderSpinner();
+            const params = new URLSearchParams(window.location.search);
+            const keyword = params.get('q');
+            
+            if (!keyword) {
+                categoryNameEl.textContent = 'غير محدد';
+                renderError("لم يتم تحديد تصنيف.");
+                return;
+            }
+            
+            categoryNameEl.textContent = keyword;
+            
+            try {
+                const response = await fetch(`${ORDS_API_BASE_URL}/category/${encodeURIComponent(keyword)}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                
+                if (data.items && data.items.length > 0) {
+                    const idKey = data.items[0].hasOwnProperty('id') ? 'id' : 'hadeeth_id';
+                    const resultsHTML = data.items.map(h => {
+                        const objectID = h[idKey];
+                        return `<a href="./details.html?id=${objectID}" class="block">
+                                    <div class="bg-[#FFFBF2] p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-r-4 border-amber-500">
+                                        <p class="text-stone-800 mb-2 text-lg leading-relaxed">${h.text}</p>
+                                        <div class="text-sm text-stone-500">
+                                            <span>${h.muhaddith || ''}</span> | <span>${h.source || ''}</span> | <span class="font-semibold text-stone-700">${h.hukm || ''}</span>
+                                        </div>
+                                    </div>
+                                </a>`;
+                    }).join('');
+                    resultsContainer.innerHTML = `<div class="space-y-4">${resultsHTML}</div>`;
+                } else {
+                    resultsContainer.innerHTML = `<div class="text-center py-10 px-4 bg-[#FFFBF2] rounded-lg shadow-sm"><p class="text-stone-500 text-lg">لا توجد نتائج في هذا التصنيف.</p></div>`;
+                }
+            } catch (err) {
+                console.error(err);
+                renderError("حدث خطأ أثناء تحميل البيانات.");
+            }
+        };
 
-// --- CATEGORY PAGE SCRIPT ---
-document.addEventListener('DOMContentLoaded', () => {
-    initFontSizeControl(); // Initialize font size control
-
-    const params = new URLSearchParams(window.location.search);
-    const keyword = params.get("q");
-    const categoryNameSpan = document.getElementById("category-name-span");
-    const resultsContainer = document.getElementById("results-container");
-
-    if (!keyword) {
-        categoryNameSpan.innerText = "لم يتم تحديد تصنيف";
-        resultsContainer.innerHTML = '';
-        renderSharedRandomHadiths();
-        return;
-    }
-
-    categoryNameSpan.innerText = keyword;
-
-    const showLoader = () => {
-        resultsContainer.innerHTML = `
-          <div class="flex justify-center items-center p-8">
-            <div class="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>`;
-    };
-    
-    showLoader();
-
-    const apiUrl = `https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN/hadith/category/${encodeURIComponent(keyword)}`;
-
-    fetch(apiUrl)
-      .then(res => {
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          return res.json();
-      })
-      .then(data => {
-          if (!data.items || data.items.length === 0) {
-              resultsContainer.innerHTML = `<div class="text-center py-10 px-4 bg-[#FFFBF2] rounded-lg shadow-sm">
-                <p class="text-stone-500 text-lg">لا توجد نتائج في هذا التصنيف.</p>
-              </div>`;
-              return;
-          }
-          
-          const idKey = data.items[0].hasOwnProperty('id') ? 'id' : 'hadeeth_id';
-          
-          const resultsHTML = data.items.map(h => `
-            <a href="./details.html?id=${h[idKey]}" class="block">
-                <div class="bg-[#FFFBF2] p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-r-4 border-amber-500">
-                    <p class="text-stone-800 mb-2 text-lg leading-relaxed">${h.text}</p>
-                    <div class="text-sm text-stone-500">
-                        <span>${h.muhaddith || ''}</span> | <span>${h.source || ''}</span> | <span class="font-semibold text-stone-700">${h.hukm || ''}</span>
-                    </div>
-                </div>
-            </a>
-          `).join('');
-          resultsContainer.innerHTML = `<div class="space-y-4">${resultsHTML}</div>`;
-      })
-      .catch(err => {
-          resultsContainer.innerHTML = `<div class="text-center py-10 px-4 bg-[#FFFBF2] rounded-lg shadow-sm">
-             <p class="text-red-500 text-lg">حدث خطأ أثناء تحميل البيانات.</p>
-           </div>`;
-          console.error(err);
-      })
-      .finally(() => {
-          renderSharedRandomHadiths();
-      });
-});
-</script>
-
+        // --- INITIALIZATION ---
+        initFontSizeControl();
+        loadCategoryHadiths();
+    });
+  </script>
 </body>
 </html>
