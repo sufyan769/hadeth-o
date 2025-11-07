@@ -267,7 +267,9 @@ ${sharh || 'لا يوجد شرح متاح.'}
         function handleSearchSimilar() {
             if (!hadithDetail) return;
             const hadithText = hadithDetail.text || hadithDetail.hadith_text || hadithDetail.hadith;
-            window.location.href = `/hadeth-o/index.html?query=${encodeURIComponent(hadithText)}`;
+            // Take the first 15 words for the search query to avoid long URL issues.
+            const searchQuery = hadithText.split(' ').slice(0, 15).join(' ');
+            window.location.href = `/hadeth-o/index.html?query=${encodeURIComponent(searchQuery)}`;
         }
 
         async function handleShowFullSimilar() {
