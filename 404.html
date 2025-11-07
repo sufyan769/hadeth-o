@@ -25,7 +25,7 @@
         font-family: 'Amiri', serif;
       }
       h1, h2, h3, h4, h5, h6, button, a {
-        font-family: 'Cairo', sans-serif;
+        font-family: 'Cairo', 'sans-serif';
       }
     </style>
 </head>
@@ -34,12 +34,9 @@
     <div id="app-container" class="max-w-5xl mx-auto p-4 md:p-6">
         <header class="bg-white/80 backdrop-blur-sm sticky top-4 z-10 p-3 rounded-lg shadow-md border border-gray-200">
             <div class="flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                     <a href="/hadeth-o/index.html" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">
-                            الرئيسية
-                     </a>
-                     <h1 class="text-xl md:text-2xl font-bold text-gray-800 hidden sm:block">موسوعة الحديث</h1>
-                </div>
+                <a href="/hadeth-o/index.html">
+                   <h1 class="text-xl md:text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors">موسوعة الحديث</h1>
+                </a>
                 <button id="font-size-toggle" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors" aria-label="تغيير حجم الخط">
                     <span>حجم الخط: 16</span>
                 </button>
