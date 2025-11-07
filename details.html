@@ -109,7 +109,7 @@
             const response = await fetch(`${ORACLE_BASE_URL}/hadith_full_api/${id}`);
             if (!response.ok) throw new Error('Failed to fetch hadith details');
             const data = await response.json();
-            return data.items[0];
+            return data.items && data.items.length > 0 ? data.items[0] : null;
         }
 
         async function getHadithFromAlgolia(id) {
@@ -139,7 +139,9 @@
             const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
             const explanation = [hadith.sharh1, hadith.sharh2, hadith.sharh3, hadith.sharh4, hadith.sharh5, hadith.sharh6]
                 .filter(Boolean).join('<br/><br/>');
-            const categories = hadith.categories ? hadith.categories.split('|').map(c => c.trim()) : [];
+            const categories = (typeof hadith.categories === 'string' ? hadith.categories.split('|') : [])
+                .map(c => c.trim()).filter(Boolean);
+
 
             detailsContainer.innerHTML = `
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -275,7 +277,7 @@ ${sharh || 'لا يوجد شرح متاح.'}
             try {
                 const detailsPromises = similarAhadith.map(h => getHadithDetails(h.objectID));
                 const details = await Promise.all(detailsPromises);
-                renderFullSimilar(details);
+                renderFullSimilar(details.filter(Boolean));
             } catch (error) {
                 console.error("Failed to fetch full similar details:", error);
                 btn.textContent = 'حدث خطأ';
@@ -319,8 +321,8 @@ ${sharh || 'لا يوجد شرح متاح.'}
 
             try {
                 const [oracleResult, algoliaResult] = await Promise.all([
-                    getHadithDetails(hadithId).catch(e => null),
-                    getHadithFromAlgolia(hadithId).catch(e => null)
+                    getHadithDetails(hadithId).catch(e => { console.error("Oracle fetch failed:", e); return null; }),
+                    getHadithFromAlgolia(hadithId).catch(e => { console.error("Algolia fetch failed:", e); return null; })
                 ]);
 
                 if (!oracleResult && !algoliaResult) {
@@ -329,43 +331,45 @@ ${sharh || 'لا يوجد شرح متاح.'}
                     return;
                 }
 
-                // Create a final, merged hadith object.
-                hadithDetail = {};
-
-                // Content fields: prefer Oracle (full details), fallback to Algolia
-                hadithDetail.text = oracleResult?.text || algoliaResult?.text;
-                hadithDetail.sharh1 = oracleResult?.sharh1;
-                hadithDetail.sharh2 = oracleResult?.sharh2;
-                hadithDetail.sharh3 = oracleResult?.sharh3;
-                hadithDetail.sharh4 = oracleResult?.sharh4;
-                hadithDetail.sharh5 = oracleResult?.sharh5;
-                hadithDetail.sharh6 = oracleResult?.sharh6;
-                hadithDetail.page_number = oracleResult?.page_number;
-                hadithDetail.takhrij = oracleResult?.takhrij;
-                hadithDetail.categories = oracleResult?.categories;
+                hadithDetail = {
+                    ...(oracleResult || {}),
+                    ...(algoliaResult || {}),
+                    text: oracleResult?.text || algoliaResult?.text,
+                    rawi: algoliaResult?.rawi || oracleResult?.rawi,
+                    muhaddith: algoliaResult?.muhaddith || oracleResult?.muhaddith,
+                    hukm: algoliaResult?.hukm || oracleResult?.hukm,
+                    source: algoliaResult?.source || oracleResult?.source,
+                };
                 
-                // Metadata fields: prefer Algolia (more accurate), fallback to Oracle
-                hadithDetail.rawi = algoliaResult?.rawi || oracleResult?.rawi;
-                hadithDetail.muhaddith = algoliaResult?.muhaddith || oracleResult?.muhaddith;
-                hadithDetail.hukm = algoliaResult?.hukm || oracleResult?.hukm;
-                hadithDetail.source = algoliaResult?.source || oracleResult?.source;
-                
-                const hadithText = hadithDetail.text || hadithDetail.hadith_text || hadithDetail.hadith;
+                const hadithText = hadithDetail.text;
 
                 if (hadithText) {
                     renderDetailsPage(hadithDetail);
                     document.title = `${hadithText.substring(0, 50)}... - موسوعة الحديث`;
 
-                    // Fetch similar in background
-                    const similarData = await getSimilarAhadith(hadithText, 6);
-                    const currentHadithId = algoliaResult?.objectID || oracleResult?.id;
-                    similarAhadith = similarData.filter(h => h.objectID != currentHadithId).slice(0, 5);
-                    renderSimilarSection(similarAhadith);
+                    // Fetch similar in background, but don't let it break the page
+                    (async () => {
+                        try {
+                            const similarData = await getSimilarAhadith(hadithText, 6);
+                            const currentHadithId = algoliaResult?.objectID || oracleResult?.id;
+                            if (Array.isArray(similarData)) {
+                                similarAhadith = similarData.filter(h => h.objectID != currentHadithId).slice(0, 5);
+                                if (similarAhadith.length > 0) {
+                                    renderSimilarSection(similarAhadith);
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Could not load similar ahadith:', error);
+                            const similarSection = document.getElementById('similar-section');
+                            if (similarSection) similarSection.style.display = 'none';
+                        }
+                    })();
+
                 } else {
                     showError('نص الحديث غير متوفر.');
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Main page load error:", error);
                 showError('حدث خطأ أثناء جلب تفاصيل الحديث.');
             } finally {
                 toggleLoader(false);
