@@ -160,7 +160,7 @@
                         <div class="mt-8 pt-6 border-t border-gray-200">
                             <h3 class="text-xl font-bold font-cairo mb-3">تصنيفات</h3>
                             <div class="flex flex-wrap gap-2">
-                                ${categories.map(cat => `<a href="/category.html?name=${encodeURIComponent(cat)}" class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">${cat}</a>`).join('')}
+                                ${categories.map(cat => `<a href="/hadeth-o/category.html?name=${encodeURIComponent(cat)}" class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">${cat}</a>`).join('')}
                             </div>
                         </div>` : ''}
                     <div id="similar-section" class="mt-8 pt-6 border-t border-gray-200"></div>
@@ -187,7 +187,7 @@
              similarSection.innerHTML = `
                 <h2 class="text-2xl font-bold font-cairo mb-4">أحاديث ذات صلة</h2>
                 <ul class="list-disc pr-5 space-y-2 mb-4">
-                    ${similar.map(s => `<li><a href="/details.html?id=${s.objectID}" class="text-teal-600 hover:underline">${s.hadith_text.substring(0, 100)}...</a></li>`).join('')}
+                    ${similar.map(s => `<li><a href="/hadeth-o/details.html?id=${s.objectID}" class="text-teal-600 hover:underline">${s.hadith_text.substring(0, 100)}...</a></li>`).join('')}
                 </ul>
                 <button id="show-full-similar-btn" class="bg-teal-100 text-teal-800 px-4 py-2 rounded-md hover:bg-teal-200 transition-colors disabled:opacity-50">
                     عرض كل الروايات المشابهة
@@ -244,7 +244,7 @@ ${sharh || 'لا يوجد شرح متاح.'}
         
         function handleSearchSimilar() {
             if (!hadithDetail) return;
-            window.location.href = `/index.html?query=${encodeURIComponent(hadithDetail.hadith_text)}`;
+            window.location.href = `/hadeth-o/index.html?query=${encodeURIComponent(hadithDetail.hadith_text)}`;
         }
 
         async function handleShowFullSimilar() {
