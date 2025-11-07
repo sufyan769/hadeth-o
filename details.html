@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -48,11 +49,13 @@
     <div id="app-container" class="max-w-5xl mx-auto p-4 md:p-6">
         <header class="bg-white/80 backdrop-blur-sm sticky top-4 z-10 p-3 rounded-lg shadow-md border border-gray-200">
             <div class="flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                     <button onclick="history.back()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">
+                <div class="flex items-center gap-3">
+                     <button onclick="history.back()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm">
                             عودة
                      </button>
-                     <h1 class="text-xl md:text-2xl font-bold text-gray-800 hidden sm:block">موسوعة الحديث</h1>
+                     <a href="/hadeth-o/index.html">
+                        <h1 class="text-lg md:text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors">موسوعة الحديث</h1>
+                     </a>
                 </div>
                 <button id="font-size-toggle" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors" aria-label="تغيير حجم الخط">
                     <span>حجم الخط: 16</span>
@@ -123,6 +126,7 @@
 
         // --- RENDER FUNCTIONS ---
         function renderDetailsPage(hadith) {
+            const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
             const explanation = [hadith.sharh1, hadith.sharh2, hadith.sharh3, hadith.sharh4, hadith.sharh5, hadith.sharh6]
                 .filter(Boolean).join('<br/><br/>');
             const categories = hadith.categories ? hadith.categories.split(',').map(c => c.trim()) : [];
@@ -131,7 +135,7 @@
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="lg:col-span-2">
-                            <p class="leading-loose text-2xl mb-6 font-amiri" style="line-height: 2">${hadith.hadith_text}</p>
+                            <p class="leading-loose text-2xl mb-6 font-amiri" style="line-height: 2">${hadithText || '...'}</p>
                             <div class="flex flex-wrap gap-2 mb-8">
                                 <button id="copy-btn" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors">نسخ</button>
                                 <button id="search-similar-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">بحث عن المشابه</button>
@@ -147,11 +151,11 @@
                                 <h2 class="text-xl font-bold font-cairo border-b-2 border-teal-500 pb-2 mb-4">بطاقة الحديث</h2>
                                 <dl>
                                     ${renderInfoRow("الراوي", hadith.rawi)}
-                                    ${renderInfoRow("المحدث", hadith.mohdith)}
+                                    ${renderInfoRow("المحدث", hadith.muhaddith)}
                                     ${renderInfoRow("المصدر", hadith.source)}
-                                    ${renderInfoRow("الصفحة/الرقم", hadith.page_or_number)}
+                                    ${renderInfoRow("الصفحة/الرقم", hadith.page_number)}
                                     ${renderInfoRow("الحكم", hadith.hukm)}
-                                    ${renderInfoRow("التخريج", hadith.takhreej)}
+                                    ${renderInfoRow("التخريج", hadith.takhrij)}
                                 </dl>
                             </div>
                         </div>
@@ -187,7 +191,10 @@
              similarSection.innerHTML = `
                 <h2 class="text-2xl font-bold font-cairo mb-4">أحاديث ذات صلة</h2>
                 <ul class="list-disc pr-5 space-y-2 mb-4">
-                    ${similar.map(s => `<li><a href="/hadeth-o/details.html?id=${s.objectID}" class="text-teal-600 hover:underline">${s.hadith_text.substring(0, 100)}...</a></li>`).join('')}
+                    ${similar.map(s => {
+                        const text = s.text || s.hadith_text || s.hadith || '';
+                        return `<li><a href="/hadeth-o/details.html?id=${s.objectID}" class="text-teal-600 hover:underline">${text.substring(0, 100)}...</a></li>`
+                    }).join('')}
                 </ul>
                 <button id="show-full-similar-btn" class="bg-teal-100 text-teal-800 px-4 py-2 rounded-md hover:bg-teal-200 transition-colors disabled:opacity-50">
                     عرض كل الروايات المشابهة
@@ -199,15 +206,17 @@
         
         function renderFullSimilar(fullSimilarList) {
             const container = document.getElementById('full-similar-container');
-            container.innerHTML = fullSimilarList.map(full => `
+            container.innerHTML = fullSimilarList.map(full => {
+                const hadithText = full.text || full.hadith_text || full.hadith;
+                return `
                 <div class="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                     <p class="leading-relaxed mb-3">${full.hadith_text}</p>
+                     <p class="leading-relaxed mb-3">${hadithText || '...'}</p>
                      <div class="text-sm text-gray-500">
                         <p><span class="font-bold text-gray-700">المصدر:</span> ${full.source}</p>
                         <p><span class="font-bold text-gray-700">الحكم:</span> <span class="text-green-700 font-bold">${full.hukm}</span></p>
                      </div>
                  </div>
-            `).join('');
+            `}).join('');
             document.getElementById('show-full-similar-btn').style.display = 'none';
         }
 
@@ -220,18 +229,19 @@
         function handleCopy() {
             const btn = document.getElementById('copy-btn');
             if (!hadithDetail) return;
+            const hadithText = hadithDetail.text || hadithDetail.hadith_text || hadithDetail.hadith;
             const sharh = [hadithDetail.sharh1, hadithDetail.sharh2, hadithDetail.sharh3, hadithDetail.sharh4, hadithDetail.sharh5, hadithDetail.sharh6]
                 .filter(Boolean).join('\n\n');
             const textToCopy = `
 نص الحديث:
-${hadithDetail.hadith_text}
+${hadithText}
 ---
 الراوي: ${hadithDetail.rawi}
-المحدث: ${hadithDetail.mohdith}
+المحدث: ${hadithDetail.muhaddith}
 المصدر: ${hadithDetail.source}
-الصفحة/الرقم: ${hadithDetail.page_or_number}
+الصفحة/الرقم: ${hadithDetail.page_number}
 الحكم: ${hadithDetail.hukm}
-التخريج: ${hadithDetail.takhreej}
+التخريج: ${hadithDetail.takhrij}
 ---
 الشرح:
 ${sharh || 'لا يوجد شرح متاح.'}
@@ -244,7 +254,8 @@ ${sharh || 'لا يوجد شرح متاح.'}
         
         function handleSearchSimilar() {
             if (!hadithDetail) return;
-            window.location.href = `/hadeth-o/index.html?query=${encodeURIComponent(hadithDetail.hadith_text)}`;
+            const hadithText = hadithDetail.text || hadithDetail.hadith_text || hadithDetail.hadith;
+            window.location.href = `/hadeth-o/index.html?query=${encodeURIComponent(hadithText)}`;
         }
 
         async function handleShowFullSimilar() {
@@ -299,11 +310,12 @@ ${sharh || 'لا يوجد شرح متاح.'}
             try {
                 hadithDetail = await getHadithDetails(hadithId);
                 if (hadithDetail) {
+                    const hadithText = hadithDetail.text || hadithDetail.hadith_text || hadithDetail.hadith;
                     renderDetailsPage(hadithDetail);
-                    document.title = `${hadithDetail.hadith_text.substring(0, 50)}... - موسوعة الحديث`;
+                    document.title = `${hadithText.substring(0, 50)}... - موسوعة الحديث`;
 
                     // Fetch similar in background
-                    const similarData = await getSimilarAhadith(hadithDetail.hadith_text, 6);
+                    const similarData = await getSimilarAhadith(hadithText, 6);
                     similarAhadith = similarData.filter(h => h.objectID !== hadithId).slice(0, 5);
                     renderSimilarSection(similarAhadith);
                 } else {
