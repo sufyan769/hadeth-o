@@ -52,7 +52,9 @@
     <div id="app-container" class="max-w-5xl mx-auto p-4 md:p-6">
         <header class="bg-white/80 backdrop-blur-sm sticky top-4 z-10 p-3 rounded-lg shadow-md border border-gray-200">
             <div class="flex justify-between items-center">
-                <h1 class="text-xl md:text-2xl font-bold text-gray-800">موسوعة الحديث</h1>
+                 <a href="/hadeth-o/index.html">
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors">موسوعة الحديث</h1>
+                 </a>
                 <button id="font-size-toggle" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors" aria-label="تغيير حجم الخط">
                     <span>حجم الخط: 16</span>
                 </button>
@@ -110,7 +112,7 @@
         };
 
         async function searchAhadith(query, type) {
-            let params = { query, hitsPerPage: 20, attributesToHighlight: ['hadith_text'] };
+            let params = { query, hitsPerPage: 20, attributesToHighlight: ['hadith_text', 'hadith'] };
             switch (type) {
                 case 'smart': params.typoTolerance = false; break;
                 case 'all_words': params.queryType = 'prefixAll'; break;
@@ -164,21 +166,23 @@
         }
         
         function renderInitialHadith(hadith) {
+            const hadithText = hadith.hadith_text || hadith.hadith;
             return `
                 <a href="/hadeth-o/details.html?id=${hadith.id}" class="block bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-teal-300 transition-all duration-200">
-                    <p class="line-clamp-2 leading-relaxed text-gray-700">${hadith.hadith_text}</p>
+                    <p class="line-clamp-2 leading-relaxed text-gray-700">${hadithText || '...'}</p>
                 </a>
             `;
         }
         
         function renderHadithCard(hadith) {
-            const highlightedText = hadith._highlightResult?.hadith_text?.value || hadith.hadith_text;
+            const hadithText = hadith.hadith_text || hadith.hadith;
+            const highlightedText = hadith._highlightResult?.hadith_text?.value || hadith._highlightResult?.hadith?.value || hadithText;
             return `
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow mb-4">
                     <div class="flex justify-between items-start mb-4">
                         <span class="bg-gray-100 text-gray-600 text-sm font-cairo px-3 py-1 rounded-full">${hadith.source}</span>
                     </div>
-                    <p class="mb-4 leading-loose">${highlightedText}</p>
+                    <p class="mb-4 leading-loose">${highlightedText || 'لا يتوفر نص الحديث'}</p>
                     <div class="text-sm text-gray-500 border-t border-gray-100 pt-4">
                         <p><span class="font-bold text-gray-700">المحدث:</span> ${hadith.mohdith}</p>
                         <p><span class="font-bold text-gray-700">الراوي:</span> ${hadith.rawi}</p>
