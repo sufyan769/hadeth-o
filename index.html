@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -112,7 +113,7 @@
         };
 
         async function searchAhadith(query, type) {
-            let params = { query, hitsPerPage: 20, attributesToHighlight: ['hadith_text', 'hadith'] };
+            let params = { query, hitsPerPage: 20, attributesToHighlight: ['text', 'hadith_text', 'hadith'] };
             switch (type) {
                 case 'smart': params.typoTolerance = false; break;
                 case 'all_words': params.queryType = 'prefixAll'; break;
@@ -166,7 +167,7 @@
         }
         
         function renderInitialHadith(hadith) {
-            const hadithText = hadith.hadith_text || hadith.hadith;
+            const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
             return `
                 <a href="/hadeth-o/details.html?id=${hadith.id}" class="block bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-teal-300 transition-all duration-200">
                     <p class="line-clamp-2 leading-relaxed text-gray-700">${hadithText || '...'}</p>
@@ -175,8 +176,8 @@
         }
         
         function renderHadithCard(hadith) {
-            const hadithText = hadith.hadith_text || hadith.hadith;
-            const highlightedText = hadith._highlightResult?.hadith_text?.value || hadith._highlightResult?.hadith?.value || hadithText;
+            const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
+            const highlightedText = hadith._highlightResult?.text?.value || hadith._highlightResult?.hadith_text?.value || hadith._highlightResult?.hadith?.value || hadithText;
             return `
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow mb-4">
                     <div class="flex justify-between items-start mb-4">
@@ -184,7 +185,7 @@
                     </div>
                     <p class="mb-4 leading-loose">${highlightedText || 'لا يتوفر نص الحديث'}</p>
                     <div class="text-sm text-gray-500 border-t border-gray-100 pt-4">
-                        <p><span class="font-bold text-gray-700">المحدث:</span> ${hadith.mohdith}</p>
+                        <p><span class="font-bold text-gray-700">المحدث:</span> ${hadith.muhaddith}</p>
                         <p><span class="font-bold text-gray-700">الراوي:</span> ${hadith.rawi}</p>
                         <p><span class="font-bold text-gray-700">الحكم:</span> <span class="text-green-700 font-bold">${hadith.hukm}</span></p>
                     </div>
