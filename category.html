@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -87,12 +88,12 @@
         }
 
         function renderCategoryHadith(hadith) {
-            const hadithText = hadith.hadith_text || hadith.hadith;
+            const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
             return `
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                      <p class="mb-4 leading-loose">${hadithText || '...'}</p>
                     <div class="text-sm text-gray-500 border-t border-gray-100 pt-4">
-                        <p><span class="font-bold text-gray-700">المحدث:</span> ${hadith.mohdith}</p>
+                        <p><span class="font-bold text-gray-700">المحدث:</span> ${hadith.muhaddith}</p>
                         <p><span class="font-bold text-gray-700">المصدر:</span> ${hadith.source}</p>
                         <p><span class="font-bold text-gray-700">الحكم:</span> <span class="text-green-700 font-bold">${hadith.hukm}</span></p>
                     </div>
