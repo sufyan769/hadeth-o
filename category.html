@@ -92,10 +92,10 @@
             return `
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                      <p class="mb-4 leading-loose">${hadithText || '...'}</p>
-                    <div class="text-sm text-gray-500 border-t border-gray-100 pt-4">
-                        <p><span class="font-bold text-gray-700">المحدث:</span> ${hadith.muhaddith}</p>
-                        <p><span class="font-bold text-gray-700">المصدر:</span> ${hadith.source}</p>
-                        <p><span class="font-bold text-gray-700">الحكم:</span> <span class="text-green-700 font-bold">${hadith.hukm}</span></p>
+                    <div class="text-sm text-gray-500 border-t border-gray-100 pt-4 flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <span class="inline-flex items-center"><strong class="font-bold text-gray-700 ml-1">المحدث:</strong> ${hadith.muhaddith || 'غير متوفر'}</span>
+                        <span class="inline-flex items-center"><strong class="font-bold text-gray-700 ml-1">المصدر:</strong> ${hadith.source || 'غير متوفر'}</span>
+                        <span class="inline-flex items-center"><strong class="font-bold text-gray-700 ml-1">الحكم:</strong> <span class="text-green-700 font-bold">${hadith.hukm || 'غير متوفر'}</span></span>
                     </div>
                     <div class="mt-4 text-left">
                         <a href="/hadeth-o/details.html?id=${hadith.id}" class="text-teal-600 hover:text-teal-800 font-bold font-cairo">
