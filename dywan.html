@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ديوان التراجم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Scheherazade New', 'Tahoma', serif;
+        background-color: #f8f9fa;
+      }
+      #main-content {
+        border-right: 1px solid #a7d7f9;
+        background-color: white;
+      }
+      #sidebar {
+        background-color: #f8f9fa;
+      }
+      .search-results-item a, .sidebar-link {
+        color: #0645ad;
+        text-decoration: none;
+      }
+      .search-results-item a:hover, .sidebar-link:hover {
+        text-decoration: underline;
+      }
+      .article-title {
+        border-bottom: 1px solid #e2e8f0;
+      }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-full md:w-64 p-4">
+            <div class="sticky top-4">
+                <div class="mb-6 text-center">
+                    <h1 class="text-2xl font-bold text-gray-800">ديوان التراجم</h1>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex">
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="ابحث في الديوان..."
+                            class="w-full p-2 text-base border border-gray-300 rounded-r-none rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <button id="searchButton" class="px-4 py-2 bg-blue-500 text-white rounded-l-none rounded-r-md hover:bg-blue-600">
+                            بحث
+                        </button>
+                    </div>
+                </div>
+
+                <nav>
+                    <ul>
+                        <li class="mb-2">
+                           <a href="#" id="randomArticleButton" class="sidebar-link">مقالة عشوائية</a>
+                        </li>
+                    </ul>
+                </nav>
+                
+                <div id="did-you-know" class="mt-6 border-t pt-4">
+                    <h3 class="font-semibold mb-2">هل تعلم...</h3>
+                    <ul id="random-list" class="list-disc pr-4 space-y-1">
+                       <!-- Random links will be inserted here -->
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main-content" class="flex-1 p-6 md:p-8 shadow-sm">
+            <p id="status" class="text-center text-gray-600 mb-6 py-2 px-4 bg-gray-100 rounded-md">جاري التهيئة...</p>
+            <div id="content-area">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const INDEX_URL = 'https://pub-bace1fa10a7b49279accbb564511dbb5.r2.dev/index.json';
+        
+        let indexData = [];
+        const contentArea = document.getElementById('content-area');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const randomArticleButton = document.getElementById('randomArticleButton');
+        const randomList = document.getElementById('random-list');
+        const statusElement = document.getElementById('status');
+        
+        async function fetchIndex() {
+            try {
+                statusElement.textContent = 'جاري تحميل ملف الفهرس...';
+                const response = await fetch(INDEX_URL);
+                if (!response.ok) throw new Error('فشل تحميل ملف الفهرس.');
+                
+                indexData = await response.json();
+                statusElement.style.display = 'none'; // Hide status on success
+                displayMainPage();
+            } catch (error) {
+                console.error('Fetch Index error:', error);
+                statusElement.textContent = `❌ خطأ في تحميل الفهرس: ${error.message}`;
+                statusElement.style.display = 'block';
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        async function displayMainPage() {
+            contentArea.innerHTML = '';
+            randomList.innerHTML = '';
+
+            const randomItems = shuffleArray([...indexData]).slice(0, 10);
+            if (randomItems.length === 0) return;
+
+            // Feature the first random item
+            const featuredItem = randomItems[0];
+            await fetchAndDisplayArticle(featuredItem.id, featuredItem.url);
+
+            // List the other 9 in the sidebar
+            randomItems.slice(1).forEach(item => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = '#';
+                a.className = 'sidebar-link';
+                a.textContent = item.name;
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    fetchAndDisplayArticle(item.id, item.url);
+                };
+                li.appendChild(a);
+                randomList.appendChild(li);
+            });
+        }
+        
+        async function fetchAndDisplayArticle(itemId, chunkUrl) {
+            contentArea.innerHTML = `<p class="text-yellow-600 animate-pulse text-center">جاري تحميل المقالة...</p>`;
+            
+            try {
+                const response = await fetch(chunkUrl);
+                if (!response.ok) throw new Error(`فشل تحميل الجزء: ${response.status}`);
+                
+                const chunk = await response.json();
+                const fullItem = chunk.find(item => item.id === itemId);
+                
+                if (fullItem) {
+                    const biographies = [fullItem.trj1, fullItem.trj2, fullItem.trj3, fullItem.trj4]
+                        .filter(trj => trj && trj.trim() !== '');
+
+                    let biographyHTML = '';
+                    if (biographies.length > 0) {
+                        biographyHTML = biographies.map(trj => {
+                            const formattedTrj = trj.replace(/([،.])/g, '$1\n');
+                            return `<p style="white-space: pre-wrap;">${formattedTrj}</p>`;
+                        }).join('<hr class="my-6 border-gray-300">');
+                    } else {
+                        biographyHTML = '<p>لا توجد ترجمة متوفرة.</p>';
+                    }
+
+                    let articleHTML = `
+                        <header class="mb-4">
+                            <h1 class="text-4xl font-bold article-title pb-2">${fullItem.full || fullItem.name}</h1>
+                        </header>
+                        <div class="space-y-4">
+                            <p class="text-gray-500 text-xl">${fullItem.death || 'تاريخ الوفاة: غير متوفر'}</p>
+                            <div class="prose max-w-none text-2xl leading-relaxed text-gray-800">
+                                ${biographyHTML}
+                            </div>
+                        </div>
+                    `;
+                    contentArea.innerHTML = articleHTML;
+                } else {
+                    throw new Error('لم يتم العثور على التفاصيل في الجزء.');
+                }
+            } catch (error) {
+                contentArea.innerHTML = `<p class="text-red-600 text-center">خطأ في تحميل المقالة: ${error.message}</p>`;
+                console.error('Fetch Article Error:', error);
+            }
+        }
+
+        function search() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            if (!searchTerm) return;
+
+            const filteredIndex = indexData.filter(item => 
+                item.name.toLowerCase().includes(searchTerm) || 
+                String(item.id).includes(searchTerm)
+            );
+
+            renderSearchResults(filteredIndex, searchTerm);
+        }
+
+        function renderSearchResults(data, searchTerm) {
+            contentArea.innerHTML = '';
+            
+            const header = document.createElement('header');
+            header.className = 'mb-4';
+            header.innerHTML = `<h1 class="text-3xl font-bold article-title pb-2">نتائج البحث عن: "${searchTerm}"</h1>`;
+            contentArea.appendChild(header);
+
+            if (data.length === 0) {
+                contentArea.innerHTML += '<p class="text-gray-500">لا توجد نتائج مطابقة.</p>';
+                return;
+            }
+
+            const ul = document.createElement('ul');
+            ul.className = 'space-y-2';
+            data.slice(0, 100).forEach(item => { 
+                const li = document.createElement('li');
+                li.className = 'search-results-item text-xl';
+                const a = document.createElement('a');
+                a.href = '#';
+                a.textContent = `${item.name} (ID: ${item.id})`;
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    fetchAndDisplayArticle(item.id, item.url);
+                };
+                li.appendChild(a);
+ul.appendChild(li);
+            });
+            contentArea.appendChild(ul);
+        }
+        
+        // Event Listeners
+        searchButton.addEventListener('click', search);
+        searchInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                search();
+            }
+        });
+        randomArticleButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if(indexData.length > 0) {
+                 const randomItem = indexData[Math.floor(Math.random() * indexData.length)];
+                 fetchAndDisplayArticle(randomItem.id, randomItem.url);
+            }
+        });
+
+        // Initial Load
+        fetchIndex();
+    </script>
+</body>
+</html>
