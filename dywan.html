@@ -92,19 +92,63 @@
         const randomList = document.getElementById('random-list');
         const statusElement = document.getElementById('status');
         
+        async function fetchWithRetry(url, retries = 3, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                         throw new Error(`فشل الطلب: ${response.status} ${response.statusText}`);
+                    }
+                    return response;
+                } catch (error) {
+                    console.warn(`Attempt ${i + 1} failed: ${error.message}. Retrying in ${delay}ms...`);
+                    if (i < retries - 1) {
+                        await new Promise(res => setTimeout(res, delay));
+                    } else {
+                        throw error; // Rethrow the last error
+                    }
+                }
+            }
+        }
+
+        function setStatus(message, type = 'loading') {
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+            statusElement.className = 'text-center mb-6 py-2 px-4 rounded-md ';
+            switch (type) {
+                case 'error':
+                    statusElement.classList.add('bg-red-100', 'text-red-700');
+                    break;
+                case 'success':
+                    statusElement.classList.add('bg-green-100', 'text-green-700');
+                    break;
+                case 'loading':
+                default:
+                    statusElement.classList.add('bg-blue-100', 'text-blue-700', 'animate-pulse');
+                    break;
+            }
+        }
+
         async function fetchIndex() {
             try {
-                statusElement.textContent = 'جاري تحميل ملف الفهرس...';
-                const response = await fetch(INDEX_URL);
-                if (!response.ok) throw new Error('فشل تحميل ملف الفهرس.');
+                setStatus('جاري تحميل ملف الفهرس...');
+                const response = await fetchWithRetry(INDEX_URL);
+                const data = await response.json();
+
+                // Data Validation
+                if (!Array.isArray(data) || data.length === 0) {
+                    throw new Error('ملف الفهرس فارغ أو تالف.');
+                }
                 
-                indexData = await response.json();
-                statusElement.style.display = 'none'; // Hide status on success
+                indexData = data;
+                setStatus('تم تحميل الفهرس بنجاح.', 'success');
+                setTimeout(() => { statusElement.style.display = 'none'; }, 2000);
+
                 displayMainPage();
+
             } catch (error) {
                 console.error('Fetch Index error:', error);
-                statusElement.textContent = `❌ خطأ في تحميل الفهرس: ${error.message}`;
-                statusElement.style.display = 'block';
+                setStatus(`❌ خطأ في تحميل الفهرس: ${error.message}`, 'error');
             }
         }
 
@@ -144,13 +188,17 @@
         }
         
         async function fetchAndDisplayArticle(itemId, chunkUrl) {
-            contentArea.innerHTML = `<p class="text-yellow-600 animate-pulse text-center">جاري تحميل المقالة...</p>`;
+            contentArea.innerHTML = `<p class="text-blue-600 animate-pulse text-center">جاري تحميل المقالة...</p>`;
             
             try {
-                const response = await fetch(chunkUrl);
-                if (!response.ok) throw new Error(`فشل تحميل الجزء: ${response.status}`);
-                
+                const response = await fetchWithRetry(chunkUrl);
                 const chunk = await response.json();
+
+                // Data Validation
+                if (!Array.isArray(chunk)) {
+                    throw new Error('ملف البيانات المستلم تالف.');
+                }
+                
                 const fullItem = chunk.find(item => item.id === itemId);
                 
                 if (fullItem) {
@@ -226,7 +274,7 @@
                     fetchAndDisplayArticle(item.id, item.url);
                 };
                 li.appendChild(a);
-ul.appendChild(li);
+                ul.appendChild(li);
             });
             contentArea.appendChild(ul);
         }
