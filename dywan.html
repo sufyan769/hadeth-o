@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -92,7 +93,8 @@
         const randomList = document.getElementById('random-list');
         const statusElement = document.getElementById('status');
         
-        async function fetchWithRetry(url, retries = 3, delay = 1000) {
+        async function fetchWithRetry(url, options = {}) {
+            const { retries = 3, delay = 1000, onRetry } = options;
             for (let i = 0; i < retries; i++) {
                 try {
                     const response = await fetch(url);
@@ -101,8 +103,12 @@
                     }
                     return response;
                 } catch (error) {
-                    console.warn(`Attempt ${i + 1} failed: ${error.message}. Retrying in ${delay}ms...`);
-                    if (i < retries - 1) {
+                    console.warn(`Attempt ${i + 1} failed: ${error.message}.`);
+                    if (i < retries - 1) { // Only retry if not the last attempt
+                        if (onRetry) {
+                            onRetry(i + 1, retries);
+                        }
+                        console.warn(`Retrying in ${delay}ms...`);
                         await new Promise(res => setTimeout(res, delay));
                     } else {
                         throw error; // Rethrow the last error
@@ -132,7 +138,10 @@
         async function fetchIndex() {
             try {
                 setStatus('جاري تحميل ملف الفهرس...');
-                const response = await fetchWithRetry(INDEX_URL);
+                const onRetryCallback = (attempt, maxRetries) => {
+                    setStatus(`... فشل تحميل الفهرس. جاري المحاولة مرة أخرى (${attempt}/${maxRetries - 1})`, 'loading');
+                };
+                const response = await fetchWithRetry(INDEX_URL, { onRetry: onRetryCallback });
                 const data = await response.json();
 
                 // Data Validation
@@ -191,7 +200,11 @@
             contentArea.innerHTML = `<p class="text-blue-600 animate-pulse text-center">جاري تحميل المقالة...</p>`;
             
             try {
-                const response = await fetchWithRetry(chunkUrl);
+                const onRetryCallback = (attempt, maxRetries) => {
+                    contentArea.innerHTML = `<p class="text-blue-600 animate-pulse text-center">... جاريي تحميل المقالة. جاري المحاولة مرة أخرى (${attempt}/${maxRetries - 1})</p>`;
+                };
+
+                const response = await fetchWithRetry(chunkUrl, { onRetry: onRetryCallback });
                 const chunk = await response.json();
 
                 // Data Validation
@@ -220,7 +233,7 @@
                             <h1 class="text-4xl font-bold article-title pb-2">${fullItem.full || fullItem.name}</h1>
                         </header>
                         <div class="space-y-4">
-                            <p class="text-gray-500 text-xl">${fullItem.death || 'تاريخ الوفاة: غير متوفر'}</p>
+                            <p class="text-gray-500 text-xl">${fullItem.death || 'تاريخ الوفاة:  '}</p>
                             <div class="prose max-w-none text-2xl leading-relaxed text-gray-800">
                                 ${biographyHTML}
                             </div>
@@ -231,7 +244,7 @@
                     throw new Error('لم يتم العثور على التفاصيل في الجزء.');
                 }
             } catch (error) {
-                contentArea.innerHTML = `<p class="text-red-600 text-center">خطأ في تحميل المقالة: ${error.message}</p>`;
+                contentArea.innerHTML = `<p class="text-red-600 text-center"> الأنتقال لقاعدة البيانات  : ${error.message}</p>`;
                 console.error('Fetch Article Error:', error);
             }
         }
