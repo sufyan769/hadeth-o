@@ -95,24 +95,28 @@
         const statusElement = document.getElementById('status');
         
         async function fetchWithRetry(url, options = {}) {
-            const { retries = 3, delay = 1000, onRetry } = options;
+            const { retries = 5, initialDelay = 1000, onRetry } = options;
+            let delay = initialDelay;
+
             for (let i = 0; i < retries; i++) {
                 try {
-                    const response = await fetch(url);
+                    // Force bypass of cache to prevent using a stale error response
+                    const response = await fetch(url, { cache: 'no-store' });
                     if (!response.ok) {
                          throw new Error(`فشل الطلب: ${response.status} ${response.statusText}`);
                     }
                     return response;
                 } catch (error) {
                     console.warn(`Attempt ${i + 1} failed: ${error.message}.`);
-                    if (i < retries - 1) { // Only retry if not the last attempt
+                    if (i < retries - 1) {
                         if (onRetry) {
                             onRetry(i + 1, retries);
                         }
                         console.warn(`Retrying in ${delay}ms...`);
                         await new Promise(res => setTimeout(res, delay));
+                        delay *= 2; // Exponential backoff
                     } else {
-                        throw error; // Rethrow the last error
+                        throw new Error('فشل الاتصال بالخادم بعد عدة محاولات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
                     }
                 }
             }
