@@ -84,6 +84,7 @@
 
     <script>
         const INDEX_URL = 'https://pub-bace1fa10a7b49279accbb564511dbb5.r2.dev/index.json';
+        const CHUNK_BASE_URL = 'https://pub-bace1fa10a7b49279accbb564511dbb5.r2.dev/';
         
         let indexData = [];
         const contentArea = document.getElementById('content-area');
@@ -178,7 +179,7 @@
 
             // Feature the first random item
             const featuredItem = randomItems[0];
-            await fetchAndDisplayArticle(featuredItem.id, featuredItem.url);
+            await fetchAndDisplayArticle(featuredItem.id, featuredItem.file);
 
             // List the other 9 in the sidebar
             randomItems.slice(1).forEach(item => {
@@ -189,22 +190,23 @@
                 a.textContent = item.name;
                 a.onclick = (e) => {
                     e.preventDefault();
-                    fetchAndDisplayArticle(item.id, item.url);
+                    fetchAndDisplayArticle(item.id, item.file);
                 };
                 li.appendChild(a);
                 randomList.appendChild(li);
             });
         }
         
-        async function fetchAndDisplayArticle(itemId, chunkUrl) {
+        async function fetchAndDisplayArticle(itemId, chunkFile) {
             contentArea.innerHTML = `<p class="text-blue-600 animate-pulse text-center">جاري تحميل المقالة...</p>`;
             
             try {
                 const onRetryCallback = (attempt, maxRetries) => {
-                    contentArea.innerHTML = `<p class="text-blue-600 animate-pulse text-center">... جاريي تحميل المقالة. جاري المحاولة مرة أخرى (${attempt}/${maxRetries - 1})</p>`;
+                    contentArea.innerHTML = `<p class="text-blue-600 animate-pulse text-center">... فشل تحميل المقالة. جاري المحاولة مرة أخرى (${attempt}/${maxRetries - 1})</p>`;
                 };
-
-                const response = await fetchWithRetry(chunkUrl, { onRetry: onRetryCallback });
+                
+                const fullChunkUrl = CHUNK_BASE_URL + chunkFile;
+                const response = await fetchWithRetry(fullChunkUrl, { onRetry: onRetryCallback });
                 const chunk = await response.json();
 
                 // Data Validation
@@ -233,7 +235,7 @@
                             <h1 class="text-4xl font-bold article-title pb-2">${fullItem.full || fullItem.name}</h1>
                         </header>
                         <div class="space-y-4">
-                            <p class="text-gray-500 text-xl">${fullItem.death || 'تاريخ الوفاة:  '}</p>
+                            <p class="text-gray-500 text-xl">${fullItem.death || 'تاريخ الوفاة: غير متوفر'}</p>
                             <div class="prose max-w-none text-2xl leading-relaxed text-gray-800">
                                 ${biographyHTML}
                             </div>
@@ -244,7 +246,7 @@
                     throw new Error('لم يتم العثور على التفاصيل في الجزء.');
                 }
             } catch (error) {
-                contentArea.innerHTML = `<p class="text-red-600 text-center"> الأنتقال لقاعدة البيانات  : ${error.message}</p>`;
+                contentArea.innerHTML = `<p class="text-red-600 text-center">خطأ في تحميل المقالة: ${error.message}</p>`;
                 console.error('Fetch Article Error:', error);
             }
         }
@@ -284,7 +286,7 @@
                 a.textContent = `${item.name} (ID: ${item.id})`;
                 a.onclick = (e) => {
                     e.preventDefault();
-                    fetchAndDisplayArticle(item.id, item.url);
+                    fetchAndDisplayArticle(item.id, item.file);
                 };
                 li.appendChild(a);
                 ul.appendChild(li);
@@ -303,7 +305,7 @@
             e.preventDefault();
             if(indexData.length > 0) {
                  const randomItem = indexData[Math.floor(Math.random() * indexData.length)];
-                 fetchAndDisplayArticle(randomItem.id, randomItem.url);
+                 fetchAndDisplayArticle(randomItem.id, randomItem.file);
             }
         });
 
