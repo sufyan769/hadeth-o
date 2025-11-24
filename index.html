@@ -29,7 +29,7 @@
             --primary-dark: #000;
             --accent-color: #fff;
             --text-color: #000;
-            --border-color: #acacac;
+            --border-color: #000;
             /* Pure Black */
             --border-width: 4px;
             /* Very Thick */
@@ -103,9 +103,10 @@
             display: flex;
             align-items: center;
             padding: 10px 12px;
-            border: 2px solid #b6b6b6;
+            border: 2px solid #000;
             border-radius: 12px;
             background-color: #fff;
+            box-shadow: 2px 2px 0px #000;
             font-family: 'Reem Kufi Ink', sans-serif;
         }
 
@@ -123,7 +124,7 @@
         .external-link {
             background-color: #e6f7ff !important;
             color: #0050b3 !important;
-            border-color: #9b9b9b !important;
+            border-color: #000 !important;
         }
 
         .external-link:hover {
@@ -157,11 +158,11 @@
         .search-container {
             background-color: #fff;
             border: var(--border-width) solid #000;
-            padding: 3px 5px;
-            margin-bottom: 1em;
+            padding: 8px 15px;
+            margin-bottom: 4em;
             border-radius: var(--radius);
             display: flex;
-            gap: 5px;
+            gap: 10px;
             align-items: center;
             max-width: 750px;
             margin-left: auto;
@@ -172,6 +173,7 @@
 
         .search-container:active {
             transform: translate(2px, 2px);
+            box-shadow: 3px 3px 0px #000;
         }
 
         .wiki-input {
@@ -208,7 +210,7 @@
 
         .wiki-btn:hover {
             background-color: #eee;
-            border: 2px solid #a4a4a4;
+            border: 2px solid #000;
         }
 
         .search-icon {
@@ -225,14 +227,15 @@
             font-size: 1em;
             padding: 8px 20px;
             border-radius: 25px;
-            border: 3px solid #aaaaaa;
+            border: 3px solid #000;
+            box-shadow: 3px 3px 0px #000;
             font-weight: bold;
         }
 
         .wiki-btn.secondary:hover {
             background-color: #f0f0f0;
             transform: translate(1px, 1px);
-            box-shadow: 2px 2px 0px #878787;
+            box-shadow: 2px 2px 0px #000;
         }
 
         /* Results */
@@ -245,9 +248,9 @@
         }
 
         .hadith-card {
-            margin-bottom: 0.5em;
-            padding: 1em;
-            border: var(--border-width) solid #c2c2c2;
+            margin-bottom: 2.5em;
+            padding: 2em;
+            border: var(--border-width) solid #00000016;
             border-radius: var(--card-radius);
             background-color: #fff;
             /* Hard shadow */
@@ -265,7 +268,7 @@
             font-weight: bold;
             color: #000;
             text-decoration: none;
-            border-bottom: 3px solid #b2b2b2;
+            border-bottom: 3px solid #000;
             padding-bottom: 5px;
             display: inline-block;
         }
@@ -283,7 +286,7 @@
             margin-top: 20px;
             background-color: #f8f8f8;
             padding: 15px;
-            border: 3px solid #bbbbbb;
+            border: 3px solid #0000001b;
             border-radius: 12px;
             font-weight: bold;
         }
@@ -296,7 +299,8 @@
         .sharh-section {
             margin-top: 25px;
             padding: 25px;
-            border: var(--border-width) solid #0000001b;
+            background-color: #fff;
+            border: var(--border-width) solid #0000001a;
             border-radius: var(--card-radius);
             font-size: 1.3em;
             font-family: 'Scheherazade New', serif;
@@ -317,7 +321,7 @@
         .smart-link {
             color: #000;
             text-decoration: none;
-            border-bottom: 3px solid #00000016;
+            border-bottom: 3px solid #000;
         }
 
         .smart-link:hover {
@@ -326,8 +330,8 @@
         }
 
         .osoul-label {
-            background-color: #0000000e;
-            color: #056bae;
+            background-color: #eff9ff;
+            color: #245e9c;
             padding: 5px 12px;
             border-radius: 20px;
             font-size: 0.9em;
@@ -352,6 +356,7 @@
         .edit-form textarea:focus {
             outline: none;
             transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0px #000;
         }
 
         .edit-controls {
@@ -407,7 +412,7 @@
 
             <!-- Font Controls -->
             <div style="margin-top: 2em; padding-top: 1em; border-top: 1px solid #eee;">
-                <strong style="color: #555;"></strong>
+                <strong style="color: #555;">حجم الخط</strong>
                 <div style="margin-top: 10px; display: flex; gap: 5px;">
                     <button id="font-inc" class="wiki-btn secondary" style="padding: 2px 10px;">+</button>
                     <button id="font-dec" class="wiki-btn secondary" style="padding: 2px 10px;">-</button>
@@ -523,6 +528,14 @@
             Object.values(views).forEach(el => el.style.display = 'none');
             views[viewName].style.display = 'block';
             window.scrollTo(0, 0);
+
+            // Toggle Sidebar
+            const sidebar = document.querySelector('.sidebar');
+            if (viewName === 'detail') {
+                sidebar.style.display = 'none';
+            } else {
+                sidebar.style.display = 'block';
+            }
         }
 
         function renderHadithCard(hit, fullData, isClickable = true) {
@@ -602,9 +615,7 @@
                             <strong>التصنيفات:</strong> ${categoriesHtml}
                         </div>
 
-                    ` : (data.sharh ? `
-                        </div>
-                    ` : '')}
+                    ` : ''}
 
                 </div>
             `;
@@ -779,7 +790,7 @@
             render: function ({ results }) {
                 if (!searchTriggered || !results) return;
                 const container = containers.results;
-                container.innerHTML = `<div class="results-info">تم العثور على ${results.nbHits} نتيجة.</div>`;
+                container.innerHTML = `< div class="results-info" > تم العثور على ${results.nbHits} نتيجة.</div >`;
                 fetchAndRender(results.hits, container, true);
             }
         });
