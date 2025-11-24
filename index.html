@@ -1,304 +1,799 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>موسوعة الحديث</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>البحث في الأحاديث - موسوعة الأحاديث</title>
+
+    <!-- 1. Algolia Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.js@2.10.4/dist/instantsearch.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@2.10.4/dist/instantsearch.min.js"></script>
+
+    <!-- 2. Firebase Libraries (v8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              amiri: ['Amiri', 'serif'],
-              cairo: ['Cairo', 'sans-serif'],
-            },
-          },
-        },
-      }
-    </script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Reem+Kufi+Ink&family=Scheherazade+New:wght@400;700&display=swap"
+        rel="stylesheet">
+
     <style>
-      body {
-        font-family: 'Amiri', serif;
-      }
-      h1, h2, h3, h4, h5, h6, button, a {
-        font-family: 'Cairo', 'sans-serif';
-      }
-      .loader {
-        width: 48px;
-        height: 48px;
-        border: 4px solid #14b8a6;
-        border-bottom-color: transparent;
-        border-radius: 50%;
-        display: inline-block;
-        box-sizing: border-box;
-        animation: rotation 1s linear infinite;
-      }
-      @keyframes rotation {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      em {
-        background-color: #fef08a; /* bg-yellow-200 */
-        font-style: normal;
-      }
+        /* Thick Black Border Theme - High Contrast / Cartoon Style */
+        :root {
+            --primary-color: #000;
+            --primary-dark: #000;
+            --accent-color: #fff;
+            --text-color: #000;
+            --border-color: #acacac;
+            /* Pure Black */
+            --border-width: 4px;
+            /* Very Thick */
+            --radius: 50px;
+            /* Pill shape for search */
+            --card-radius: 16px;
+            /* Rounded cards */
+            --bg-color: #fff;
+        }
+
+        body {
+            font-family: 'Amiri', serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            direction: rtl;
+        }
+
+        /* Layout */
+        .wrapper {
+            display: flex;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* Sidebar (Right) */
+        .sidebar {
+            width: 14em;
+            padding: 2em 1.5em;
+            background-color: #fff;
+            flex-shrink: 0;
+            font-size: 0.95em;
+            border-left: var(--border-width) solid var(--border-color);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 2em;
+            padding-bottom: 1em;
+            border-bottom: var(--border-width) solid var(--border-color);
+        }
+
+        .site-title {
+            font-family: 'Reem Kufi Ink', sans-serif;
+            font-weight: bold;
+            font-size: 1.8em;
+            color: #000;
+            text-decoration: none;
+            display: block;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 1em 0;
+        }
+
+        .sidebar-menu li {
+            margin: 1em 0;
+        }
+
+        .sidebar-menu a {
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border: 2px solid #b6b6b6;
+            border-radius: 12px;
+            background-color: #fff;
+            font-family: 'Reem Kufi Ink', sans-serif;
+        }
+
+        .sidebar-menu a:hover {
+            background-color: #f0f0f0;
+            transform: translate(-1px, -1px);
+        }
+
+        .sidebar-menu a .icon {
+            margin-left: 10px;
+            font-size: 1.2em;
+        }
+
+        /* External Links */
+        .external-link {
+            background-color: #e6f7ff !important;
+            color: #0050b3 !important;
+            border-color: #9b9b9b !important;
+        }
+
+        .external-link:hover {
+            background-color: #bae7ff !important;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1;
+            background-color: #ffffff;
+            padding: 3em 4em;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Header */
+        .page-header {
+            margin-bottom: 3em;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Amiri', serif;
+            font-weight: bold;
+            margin: 0;
+            font-size: 2.8em;
+            color: #000;
+        }
+
+        /* Search Box Area - Thick Pill */
+        .search-container {
+            background-color: #fff;
+            border: var(--border-width) solid #000;
+            padding: 3px 5px;
+            margin-bottom: 1em;
+            border-radius: var(--radius);
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
+            /* Hard shadow */
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .search-container:active {
+            transform: translate(2px, 2px);
+        }
+
+        .wiki-input {
+            flex-grow: 1;
+            padding: 0.8em;
+            border: none;
+            background: transparent;
+            font-size: 1.3em;
+            font-family: 'Amiri', serif;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .wiki-input:focus {
+            outline: none;
+        }
+
+        /* Search Button (Icon on Left) */
+        .wiki-btn {
+            background-color: transparent;
+            color: #000;
+            border: none;
+            padding: 0.5em;
+            cursor: pointer;
+            font-size: 1.5em;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            order: 2;
+            /* Left side in RTL */
+            border: 2px solid transparent;
+        }
+
+        .wiki-btn:hover {
+            background-color: #eee;
+            border: 2px solid #a4a4a4;
+        }
+
+        .search-icon {
+            width: 32px;
+            height: 32px;
+            fill: #000;
+            stroke: #000;
+            stroke-width: 1.5px;
+        }
+
+        .wiki-btn.secondary {
+            background-color: #fff;
+            color: #000;
+            font-size: 1em;
+            padding: 8px 20px;
+            border-radius: 25px;
+            border: 3px solid #aaaaaa;
+            font-weight: bold;
+        }
+
+        .wiki-btn.secondary:hover {
+            background-color: #f0f0f0;
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0px #878787;
+        }
+
+        /* Results */
+        .results-info {
+            font-size: 1.2em;
+            color: #000;
+            margin-bottom: 2em;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .hadith-card {
+            margin-bottom: 0.5em;
+            padding: 1em;
+            border: var(--border-width) solid #c2c2c2;
+            border-radius: var(--card-radius);
+            background-color: #fff;
+            /* Hard shadow */
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .hadith-card:hover {
+            transform: translate(-2px, -2px);
+        }
+
+        .hadith-title {
+            font-size: 1.6em;
+            margin-bottom: 1em;
+            font-family: 'Amiri', serif;
+            font-weight: bold;
+            color: #000;
+            text-decoration: none;
+            border-bottom: 3px solid #b2b2b2;
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+
+        .hadith-snippet {
+            font-size: 1.5em;
+            line-height: 1.8;
+            color: #000;
+            font-family: 'Scheherazade New', serif;
+        }
+
+        .hadith-meta {
+            font-size: 1em;
+            color: #000;
+            margin-top: 20px;
+            background-color: #f8f8f8;
+            padding: 15px;
+            border: 3px solid #bbbbbb;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .hadith-meta span {
+            margin-left: 20px;
+            display: inline-block;
+        }
+
+        .sharh-section {
+            margin-top: 25px;
+            padding: 25px;
+            border: var(--border-width) solid #0000001b;
+            border-radius: var(--card-radius);
+            font-size: 1.3em;
+            font-family: 'Scheherazade New', serif;
+            color: #000;
+        }
+
+        .sharh-label {
+            font-weight: bold;
+            color: #000;
+            display: block;
+            margin-bottom: 15px;
+            font-family: 'Amiri', serif;
+            font-size: 1.2em;
+            text-decoration: underline;
+            text-decoration-thickness: 3px;
+        }
+
+        .smart-link {
+            color: #000;
+            text-decoration: none;
+            border-bottom: 3px solid #00000016;
+        }
+
+        .smart-link:hover {
+            background-color: #000;
+            color: #fff;
+        }
+
+        .osoul-label {
+            background-color: #0000000e;
+            color: #056bae;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-right: 10px;
+            border: 0.1px solid #000;
+        }
+
+        /* Edit Form */
+        .edit-form textarea {
+            width: 100%;
+            min-height: 180px;
+            padding: 20px;
+            font-family: 'Scheherazade New', serif;
+            font-size: 1.4em;
+            border: var(--border-width) solid #000;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            direction: rtl;
+        }
+
+        .edit-form textarea:focus {
+            outline: none;
+            transform: translate(1px, 1px);
+        }
+
+        .edit-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 5em;
+            padding-top: 3em;
+            border-top: var(--border-width) solid #000;
+            font-size: 1em;
+            color: #000;
+            text-align: center;
+            font-weight: bold;
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
 
-    <div id="app-container" class="max-w-5xl mx-auto p-4 md:p-6">
-        <header class="bg-white p-3 rounded-lg shadow-md border border-gray-200">
-            <div class="flex justify-between items-center">
-                 <a href="/hadeth-o/index.html">
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors">موسوعة الحديث</h1>
-                 </a>
-                <button id="font-size-toggle" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors" aria-label="تغيير حجم الخط">
-                    <span>حجم الخط: 16</span>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="site-title">موسوعة الأحاديث</div>
+                <div style="font-size: 0.8em; color: #888; margin-top: 5px;">البحث السريع والدقيق</div>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" onclick="location.reload()"><span class="icon">🏠</span> الصفحة الرئيسية</a></li>
+                <li><a href="#" onclick="location.reload()"><span class="icon">🎲</span> صفحة عشوائية</a></li>
+            </ul>
+
+            <!-- Useful Links -->
+            <div style="margin-top: 1.5em; padding-top: 1em; border-top: 3px solid #000;">
+                <strong style="color: #000; display:block; margin-bottom:15px; font-family:'Reem Kufi Ink';">روابط
+                    مفيدة</strong>
+                <ul class="sidebar-menu" style="margin:0; font-size:0.9em;">
+                    <li><a href="https://sufyan769.github.io/tarajum/firebase.html" target="_blank"
+                            class="external-link"><span class="icon">🔗</span> تراجم فايربيز</a></li>
+                    <li><a href="https://sufyan769.github.io/tarajum/firebase.html" target="_blank"
+                            class="external-link"><span class="icon">🔍</span> تراجم البحث الذكي</a></li>
+                    <li><a href="https://sufyan769.github.io/hadeth/index1.html" target="_blank"
+                            class="external-link"><span class="icon">📚</span> المكتبة الحديثية</a></li>
+                    <li><a href="https://sufyan769.github.io/hadeth/wiki.html" target="_blank"
+                            class="external-link"><span class="icon">📖</span> ويكي الحديث</a></li>
+                    <li><a href="https://sufyan769.github.io/tarajim-data/#" target="_blank" class="external-link"><span
+                                class="icon">⏳</span> تاريخ الاسلام</a></li>
+                    <li><a href="https://fatawa-seo-eanp.vercel.app/algolia-search.html#/" target="_blank"
+                            class="external-link"><span class="icon">❓</span> هل يجوز</a></li>
+                </ul>
+            </div>
+
+            <!-- Font Controls -->
+            <div style="margin-top: 2em; padding-top: 1em; border-top: 1px solid #eee;">
+                <strong style="color: #555;"></strong>
+                <div style="margin-top: 10px; display: flex; gap: 5px;">
+                    <button id="font-inc" class="wiki-btn secondary" style="padding: 2px 10px;">+</button>
+                    <button id="font-dec" class="wiki-btn secondary" style="padding: 2px 10px;">-</button>
+                    <button id="font-reset" class="wiki-btn secondary" style="padding: 2px 10px;">إعادة</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content-area">
+            <div class="page-header">
+                <h1>بحث في الأحاديث النبوية</h1>
+            </div>
+
+            <!-- Custom Search Box -->
+            <div class="search-container">
+                <input type="text" id="search-input" class="wiki-input" placeholder="اكتب كلمة البحث هنا..." autofocus>
+                <button id="search-btn" class="wiki-btn">
+                    <svg class="search-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                    </svg>
                 </button>
             </div>
-        </header>
 
-        <main class="mt-4">
-            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-                <form id="search-form">
-                    <input
-                        type="search"
-                        id="search-input"
-                        placeholder="ابحث في نصوص الأحاديث..."
-                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 mb-4 text-lg"
-                    />
-                    <div id="search-buttons" class="flex flex-wrap gap-2 justify-center">
-                        <button type="submit" data-search-type="smart" class="search-btn px-4 py-2 rounded-md transition-colors text-sm md:text-base bg-teal-600 text-white shadow">بحث ذكي</button>
-                        <button type="button" data-search-type="all_words" class="search-btn px-4 py-2 rounded-md transition-colors text-sm md:text-base bg-gray-200 text-gray-700 hover:bg-gray-300">بحث كل الكلمات</button>
-                        <button type="button" data-search-type="exact" class="search-btn px-4 py-2 rounded-md transition-colors text-sm md:text-base bg-gray-200 text-gray-700 hover:bg-gray-300">بحث عن النص المطابق</button>
-                    </div>
-                </form>
+            <!-- VIEW 1: Random Hadiths (Initial) -->
+            <div id="random-view">
+                <h3 style="color: var(--primary-dark); border-bottom: 1px solid #eee; padding-bottom: 10px;">أحاديث
+                    مختارة</h3>
+                <div id="random-container">جاري تحميل الأحاديث العشوائية...</div>
             </div>
 
-            <div id="results-container" class="mt-6">
-                <div id="loader" class="text-center p-8"><div class="loader mx-auto"></div></div>
+            <!-- VIEW 2: Search Results -->
+            <div id="results-view" style="display: none;">
+                <div id="results-container"></div>
+                <div id="pagination-container" style="text-align: center; margin-top: 30px;"></div>
+            </div>
+
+            <!-- VIEW 3: Detailed View -->
+            <div id="detail-view" style="display: none;">
+                <button id="back-btn" class="wiki-btn secondary" style="margin-bottom: 20px;">&larr; العودة
+                    للنتائج</button>
+
+                <div id="detail-content">
+                    <!-- Content injected via JS -->
+                </div>
+
+                <div id="similar-section" style="margin-top: 40px;">
+                    <h3 style="color: var(--primary-dark);">أحاديث مشابهة</h3>
+                    <div id="similar-container"></div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>جميع الحقوق محفوظة لموسوعة الأحاديث © 2025</p>
             </div>
         </main>
     </div>
 
-    <script type="module">
-        // --- API CONFIG ---
-        const ALGOLIA_APP_ID = '3XD12I7386';
-        const ALGOLIA_SEARCH_KEY = '89e8e132a05fdb02275f64dec8d14d05';
-        const ALGOLIA_INDEX_NAME = 'ahadith_clean';
-        const ALGOLIA_URL = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX_NAME}/query`;
-        const ORACLE_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN';
+    <script>
+        // ----------------------------------------------------
+        // Configuration
+        // ----------------------------------------------------
+        const ALGOLIA_APP_ID = '88G4AVERCC';
+        const ALGOLIA_API_KEY = '76402a5d814264e01fb86ca687d26e30';
+        const ALGOLIA_INDEX_NAME = 'firebase-hadeth';
 
-
-        // --- UI ELEMENTS ---
-        const searchForm = document.getElementById('search-form');
-        const searchInput = document.getElementById('search-input');
-        const resultsContainer = document.getElementById('results-container');
-        const loader = document.getElementById('loader');
-        const searchButtons = document.querySelectorAll('.search-btn');
-
-        // --- STATE ---
-        let searchType = 'smart';
-        let isInitialLoad = true;
-        
-        // --- API FUNCTIONS ---
-        const algoliaHeaders = {
-            'X-Algolia-Application-Id': ALGOLIA_APP_ID,
-            'X-Algolia-API-Key': ALGOLIA_SEARCH_KEY,
-            'Content-Type': 'application/json',
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYJ2pVoWJ5ednWOnnF2dOJ43MJvDi_8rw",
+            authDomain: "hadeth-7baf7.firebaseapp.com",
+            projectId: "hadeth-7baf7",
+            storageBucket: "hadeth-7baf7.firebasestorage.app",
+            messagingSenderId: "401684715520",
+            appId: "1:401684715520:web:297abdb6aee1fb3176a0e5",
+            measurementId: "G-LGET278KWQ"
         };
 
-        async function searchAhadith(query, type) {
-            let params = { query, hitsPerPage: 20, attributesToHighlight: ['text', 'hadith_text', 'hadith'] };
-            switch (type) {
-                case 'smart': params.typoTolerance = false; break;
-                case 'all_words': params.queryType = 'prefixAll'; break;
-                case 'exact': params.query = `"${query}"`; params.advancedSyntax = true; break;
-            }
-            const response = await fetch(ALGOLIA_URL, {
-                method: 'POST',
-                headers: algoliaHeaders,
-                body: JSON.stringify(params),
-            });
-            if (!response.ok) throw new Error('Algolia search failed');
-            const data = await response.json();
-            return data.hits;
-        }
-        
-        async function getRandomAhadith(count = 7) {
-            const defaultCategory = 'إيمان';
-            const response = await fetch(`${ORACLE_BASE_URL}/hadith/categories/${encodeURIComponent(defaultCategory)}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch ahadith for category');
-            }
-            const data = await response.json();
-            const items = data.items || [];
-            // Shuffle and pick `count` items
-            for (let i = items.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [items[i], items[j]] = [items[j], items[i]];
-            }
-            return items.slice(0, count);
+        // ----------------------------------------------------
+        // Initialization
+        // ----------------------------------------------------
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const hadithsCollection = db.collection('hadiths');
+
+        const searchClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
+        const index = searchClient.initIndex(ALGOLIA_INDEX_NAME);
+
+        // State
+        let currentView = 'random'; // random, results, detail
+        let searchTriggered = false;
+        let currentFontSize = 24; // px
+        let currentHadithId = null; // For editing context
+
+        // DOM Elements
+        const views = {
+            random: document.getElementById('random-view'),
+            results: document.getElementById('results-view'),
+            detail: document.getElementById('detail-view')
+        };
+        const containers = {
+            random: document.getElementById('random-container'),
+            results: document.getElementById('results-container'),
+            detail: document.getElementById('detail-content'),
+            similar: document.getElementById('similar-container')
+        };
+        const searchInput = document.getElementById('search-input');
+
+        // ----------------------------------------------------
+        // Helper Functions
+        // ----------------------------------------------------
+        function switchView(viewName) {
+            currentView = viewName;
+            Object.values(views).forEach(el => el.style.display = 'none');
+            views[viewName].style.display = 'block';
+            window.scrollTo(0, 0);
         }
 
-        // --- RENDER FUNCTIONS ---
-        function renderResults(results) {
-            if (isInitialLoad) {
-                resultsContainer.innerHTML = `
-                    <h2 class="font-cairo text-xl font-bold mb-4 text-gray-700">أحاديث مختارة</h2>
-                    <div class="space-y-3">
-                        ${results.map(renderInitialHadith).join('')}
+        function renderHadithCard(hit, fullData, isClickable = true) {
+            const data = fullData || hit;
+            const id = hit.objectID || hit.hadith_id;
+
+            // Smart Categories Links
+            let categoriesHtml = 'غير متوفر';
+            if (data.category) {
+                const cats = Array.isArray(data.category) ? data.category : [data.category];
+                categoriesHtml = cats.map(c => `<a href="#" class="smart-link" onclick="triggerSmartSearch('${c}'); return false;">${c}</a>`).join('، ');
+            } else if (data.categories) {
+                const cats = Array.isArray(data.categories) ? data.categories : [data.categories];
+                categoriesHtml = cats.map(c => `<a href="#" class="smart-link" onclick="triggerSmartSearch('${c}'); return false;">${c}</a>`).join('، ');
+            }
+
+            // Osoul Indicator
+            const osoulLabel = data.osoul ? `<span class="osoul-label">أصول الحديث متوفر</span>` : '';
+
+            // Title Logic
+            let titleText = `حديث رقم ${id}`;
+            if (data.source) {
+                const sourceVal = Array.isArray(data.source) ? data.source[0] : data.source;
+                titleText = `المصدر: ${sourceVal}`;
+            }
+
+            const html = `
+                <div class="hadith-card" ${isClickable ? `onclick="openDetail('${id}')" style="cursor:pointer;"` : ''}>
+                    
+                    <!-- 1. Title -->
+                    <div class="hadith-title">
+                        ${titleText}
                     </div>
-                `;
-            } else {
-                 if (results.length > 0) {
-                    resultsContainer.innerHTML = `
-                        <h2 class="font-cairo text-xl font-bold mb-4 text-gray-700">نتائج البحث: ${results.length} نتيجة</h2>
-                        <div class="space-y-4">
-                            ${results.map(renderHadithCard).join('')}
+
+                    <!-- 2. Text -->
+                    <div class="hadith-snippet content-scalable">
+                        ${data.text || hit._highlightResult?.text?.value || ''}
+                    </div>
+
+                    <!-- 3. Metadata -->
+                    <div class="hadith-meta content-scalable" style="font-size: 0.8em;">
+                        <span><strong>المحدث:</strong> ${Array.isArray(data.muhaddith) ? data.muhaddith.join('، ') : (data.muhaddith || 'غير متوفر')}</span>
+                        <span><strong>الحكم:</strong> ${Array.isArray(data.hukm) ? data.hukm.join('، ') : (data.hukm || 'غير متوفر')}</span>
+                        <span><strong>الصفحة:</strong> ${data.page_number || 'غير متوفر'}</span>
+                        ${osoulLabel}
+                    </div>
+                    
+                    ${!isClickable ? `
+                        <!-- 4. Osoul Text (Detail View Only) -->
+                        ${data.osoul ? `
+                            <div class="sharh-section content-scalable" style="border-right: 6px solid #000; background-color: #f4f4f4;">
+                                <span class="sharh-label">أصول الحديث:</span>
+                                ${data.osoul}
+                            </div>
+                        ` : ''}
+
+                        <!-- 5. Sharh (Detail View Only) -->
+                        <div id="sharh-display-${id}" class="sharh-section content-scalable">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <span class="sharh-label">الشرح:</span>
+                                <button onclick="enableEdit('${id}')" class="wiki-btn secondary" style="font-size:0.8em; padding:2px 8px;">تعديل الشرح</button>
+                            </div>
+                            <div id="sharh-text-${id}">${data.sharh || 'لا يوجد شرح متوفر.'}</div>
                         </div>
-                    `;
-                } else {
-                    resultsContainer.innerHTML = `<p class="text-center text-gray-500 bg-yellow-100 p-4 rounded-md">لم يتم العثور على نتائج للبحث.</p>`;
+                        
+                        <div id="sharh-edit-${id}" class="sharh-section edit-form" style="display:none;">
+                            <span class="sharh-label">تعديل الشرح:</span>
+                            <textarea id="sharh-input-${id}">${data.sharh || ''}</textarea>
+                            <div class="edit-controls">
+                                <button onclick="saveSharh('${id}')" class="wiki-btn">حفظ</button>
+                                <button onclick="cancelEdit('${id}')" class="wiki-btn secondary">إلغاء</button>
+                            </div>
+                        </div>
+
+                        <!-- 6. Categories (Detail View Only - Bottom) -->
+                        <div style="margin-top: 20px; padding: 15px; border-top: 2px dashed #000;">
+                            <strong>التصنيفات:</strong> ${categoriesHtml}
+                        </div>
+
+                    ` : (data.sharh ? `
+                        </div>
+                    ` : '')}
+
+                </div>
+            `;
+            return html;
+        }
+
+        async function fetchAndRender(hits, container, isClickable = true) {
+            container.innerHTML = '<p>جاري التحميل...</p>';
+
+            const promises = hits.map(hit => {
+                const id = hit.hadith_id || hit.objectID;
+                return hadithsCollection.doc(String(id)).get()
+                    .then(doc => doc.exists ? doc.data() : null)
+                    .catch(() => null)
+                    .then(data => ({ ...hit, fullData: data }));
+            });
+
+            const items = await Promise.all(promises);
+            container.innerHTML = '';
+
+            if (items.length === 0) {
+                container.innerHTML = '<p>لا توجد نتائج.</p>';
+                return;
+            }
+
+            items.forEach(item => {
+                if (item.fullData) {
+                    container.innerHTML += renderHadithCard(item, item.fullData, isClickable);
                 }
-            }
-        }
-        
-        function renderInitialHadith(hadith) {
-            const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
-            return `
-                <a href="/hadeth-o/details.html?id=${hadith.id}" class="block bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-teal-300 transition-all duration-200">
-                    <p class="line-clamp-2 leading-relaxed text-gray-700">${hadithText || '...'}</p>
-                </a>
-            `;
-        }
-        
-        function renderHadithCard(hadith) {
-            const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
-            const highlightedText = hadith._highlightResult?.text?.value || hadith._highlightResult?.hadith_text?.value || hadith._highlightResult?.hadith?.value || hadithText;
-            return `
-                <a href="/hadeth-o/details.html?id=${hadith.objectID}" class="block bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-teal-300 transition-all duration-200">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="bg-gray-100 text-gray-600 text-sm font-cairo px-3 py-1 rounded-full">${hadith.source}</span>
-                    </div>
-                    <p class="mb-4 leading-loose text-gray-800">${highlightedText || 'لا يتوفر نص الحديث'}</p>
-                    <div class="text-sm text-gray-500 border-t border-gray-100 pt-4 flex flex-wrap items-center gap-x-4 gap-y-1">
-                        <span class="inline-flex items-center"><strong class="font-bold text-gray-700 ml-1">المحدث:</strong> ${hadith.muhaddith || 'غير متوفر'}</span>
-                        <span class="inline-flex items-center"><strong class="font-bold text-gray-700 ml-1">الراوي:</strong> ${hadith.rawi || 'غير متوفر'}</span>
-                        <span class="inline-flex items-center"><strong class="font-bold text-gray-700 ml-1">الحكم:</strong> <span class="text-green-700 font-bold">${hadith.hukm || 'غير متوفر'}</span></span>
-                    </div>
-                </a>
-            `;
+            });
         }
 
-        function toggleLoader(show) {
-            loader.style.display = show ? 'flex' : 'none';
-            if(show) {
-                resultsContainer.innerHTML = '';
-                resultsContainer.appendChild(loader);
-            }
+        // ----------------------------------------------------
+        // Core Logic
+        // ----------------------------------------------------
+
+        // 1. Random Hadiths
+        function loadRandomHadiths() {
+            const randomPage = Math.floor(Math.random() * 50);
+            index.search('', { page: randomPage, hitsPerPage: 10 }).then(({ hits }) => {
+                fetchAndRender(hits, containers.random, true);
+                updateFontSize();
+            });
         }
 
-        // --- EVENT HANDLERS ---
-        async function handleSearch(query, type) {
-            if (!query.trim()) return;
-            isInitialLoad = false;
-            toggleLoader(true);
+        // 2. Detailed View
+        window.openDetail = async function (id) {
+            currentHadithId = id;
+            switchView('detail');
+            containers.detail.innerHTML = 'جاري تحميل التفاصيل...';
+            containers.similar.innerHTML = '';
+
             try {
-                const results = await searchAhadith(query, type);
-                renderResults(results);
-            } catch (err) {
-                resultsContainer.innerHTML = `<p class="text-center text-red-500 bg-red-100 p-4 rounded-md">حدث خطأ أثناء البحث. يرجى المحاولة مرة أخرى.</p>`;
-            } finally {
-                toggleLoader(false);
+                const doc = await hadithsCollection.doc(String(id)).get();
+                if (!doc.exists) {
+                    containers.detail.innerHTML = 'الحديث غير موجود.';
+                    return;
+                }
+                const data = doc.data();
+                containers.detail.innerHTML = renderHadithCard({ objectID: id }, data, false);
+                fetchSimilarHadiths(data.text);
+            } catch (e) {
+                console.error(e);
+                containers.detail.innerHTML = 'حدث خطأ أثناء التحميل.';
             }
-        }
+        };
 
-        searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            handleSearch(searchInput.value, searchType);
-        });
+        // 3. Edit Logic
+        window.enableEdit = function (id) {
+            document.getElementById(`sharh-display-${id}`).style.display = 'none';
+            document.getElementById(`sharh-edit-${id}`).style.display = 'block';
+        };
 
-        searchButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                const newSearchType = e.currentTarget.dataset.searchType;
-                searchType = newSearchType;
+        window.cancelEdit = function (id) {
+            document.getElementById(`sharh-display-${id}`).style.display = 'block';
+            document.getElementById(`sharh-edit-${id}`).style.display = 'none';
+        };
 
-                // Update button styles
-                searchButtons.forEach(btn => {
-                    btn.classList.remove('bg-teal-600', 'text-white', 'shadow');
-                    btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
-                    btn.type = 'button';
+        window.saveSharh = async function (id) {
+            const newText = document.getElementById(`sharh-input-${id}`).value;
+            const btn = document.querySelector(`#sharh-edit-${id} button`); // Save btn
+
+            btn.textContent = 'جاري الحفظ...';
+            btn.disabled = true;
+
+            try {
+                await hadithsCollection.doc(String(id)).update({
+                    sharh: newText
                 });
-                e.currentTarget.classList.add('bg-teal-600', 'text-white', 'shadow');
-                e.currentTarget.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
-                
-                // Set the active button to be the submit button
-                const currentSubmitButton = document.querySelector('button[type="submit"]');
-                if(currentSubmitButton) currentSubmitButton.type = 'button';
-                e.currentTarget.type = 'submit';
 
-                // Perform search if not a form submission
-                if (e.currentTarget.type !== 'submit') {
-                   handleSearch(searchInput.value, searchType);
-                }
+                // Update UI
+                document.getElementById(`sharh-text-${id}`).textContent = newText;
+                cancelEdit(id);
+                alert('تم حفظ الشرح بنجاح.');
+            } catch (error) {
+                console.error("Error updating document: ", error);
+                alert('حدث خطأ أثناء الحفظ: ' + error.message);
+            } finally {
+                btn.textContent = 'حفظ';
+                btn.disabled = false;
+            }
+        };
+
+        function fetchSimilarHadiths(text) {
+            if (!text) return;
+            const query = text.substring(0, 100);
+            index.search(query, { hitsPerPage: 5, removeStopWords: true }).then(({ hits }) => {
+                fetchAndRender(hits, containers.similar, true);
             });
-        });
-
-        // --- FONT SIZE LOGIC ---
-        const fontSizes = [
-            { size: 16, class: 'text-base' }, { size: 18, class: 'text-lg' },
-            { size: 20, class: 'text-xl' }, { size: 24, class: 'text-2xl' },
-        ];
-        let currentFontSizeIndex = 0;
-
-        function applyFontSize(index) {
-            const appContainer = document.getElementById('app-container');
-            const toggleButton = document.getElementById('font-size-toggle');
-            fontSizes.forEach(fs => appContainer.classList.remove(fs.class));
-            appContainer.classList.add(fontSizes[index].class);
-            toggleButton.querySelector('span').textContent = `حجم الخط: ${fontSizes[index].size}`;
-            localStorage.setItem('hadithAppFontSize', fontSizes[index].size.toString());
-            currentFontSizeIndex = index;
         }
 
-        // --- INITIALIZATION ---
-        document.addEventListener('DOMContentLoaded', async () => {
-             // Font size setup
-            const savedSize = localStorage.getItem('hadithAppFontSize');
-            const initialIndex = savedSize ? fontSizes.findIndex(fs => fs.size.toString() === savedSize) : 0;
-            applyFontSize(initialIndex !== -1 ? initialIndex : 0);
-            document.getElementById('font-size-toggle').addEventListener('click', () => {
-                const nextIndex = (currentFontSizeIndex + 1) % fontSizes.length;
-                applyFontSize(nextIndex);
+        // 4. Smart Search
+        window.triggerSmartSearch = function (category) {
+            searchInput.value = category;
+            document.getElementById('search-btn').click();
+        };
+
+        // 5. Font Controls - UPDATED to target only content
+        function updateFontSize() {
+            // Target specific classes that contain the hadith text and explanation
+            const scalableElements = document.querySelectorAll('.content-scalable');
+            scalableElements.forEach(el => {
+                el.style.fontSize = currentFontSize + 'px';
             });
-            
-            // Check for search query in URL
-            const params = new URLSearchParams(window.location.search);
-            const queryFromUrl = params.get('query');
-            
-            if (queryFromUrl) {
-                 searchInput.value = decodeURIComponent(queryFromUrl);
-                 await handleSearch(decodeURIComponent(queryFromUrl), searchType);
-            } else {
-                // Initial random load
-                isInitialLoad = true;
-                toggleLoader(true);
-                try {
-                    const results = await getRandomAhadith();
-                    renderResults(results);
-                } catch (err) {
-                    resultsContainer.innerHTML = `<p class="text-center text-red-500 bg-red-100 p-4 rounded-md">حدث خطأ أثناء جلب الأحاديث. يرجى المحاولة مرة أخرى.</p>`;
-                } finally {
-                    toggleLoader(false);
-                }
+
+            // Also update meta specifically (usually smaller)
+            const metaElements = document.querySelectorAll('.hadith-meta');
+            metaElements.forEach(el => {
+                el.style.fontSize = (currentFontSize * 0.7) + 'px'; // Meta is 70% of base
+            });
+        }
+
+        document.getElementById('font-inc').onclick = () => { currentFontSize += 2; updateFontSize(); };
+        document.getElementById('font-dec').onclick = () => { currentFontSize = Math.max(12, currentFontSize - 2); updateFontSize(); };
+        document.getElementById('font-reset').onclick = () => { currentFontSize = 24; updateFontSize(); };
+
+        document.getElementById('back-btn').onclick = () => {
+            switchView('results');
+        };
+
+        // ----------------------------------------------------
+        // InstantSearch Setup
+        // ----------------------------------------------------
+        const search = instantsearch({
+            indexName: ALGOLIA_INDEX_NAME,
+            searchClient,
+            searchFunction: function (helper) {
+                if (searchTriggered) helper.search();
             }
         });
 
+        search.addWidget({
+            init: function (opts) {
+                const helper = opts.helper;
+                const btn = document.getElementById('search-btn');
+                const trigger = () => {
+                    const query = searchInput.value.trim();
+                    if (query) {
+                        searchTriggered = true;
+                        switchView('results');
+                        helper.setQuery(query).search();
+                    }
+                };
+                btn.addEventListener('click', trigger);
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') trigger();
+                });
+            }
+        });
+
+        search.addWidget({
+            render: function ({ results }) {
+                if (!searchTriggered || !results) return;
+                const container = containers.results;
+                container.innerHTML = `<div class="results-info">تم العثور على ${results.nbHits} نتيجة.</div>`;
+                fetchAndRender(results.hits, container, true);
+            }
+        });
+
+        search.addWidget(
+            instantsearch.widgets.pagination({
+                container: '#pagination-container',
+                maxPages: 20,
+            })
+        );
+
+        search.start();
+        loadRandomHadiths();
     </script>
 </body>
+
 </html>
