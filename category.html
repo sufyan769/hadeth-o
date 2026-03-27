@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -8,66 +7,167 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@300;400;600;700;800&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            colors: {
+              emerald: {
+                800: '#064e3b',
+              },
+              amber: {
+                600: '#d97706',
+              }
+            },
             fontFamily: {
               amiri: ['Amiri', 'serif'],
               cairo: ['Cairo', 'sans-serif'],
+              scheherazade: ['Scheherazade New', 'serif'],
             },
           },
         },
       }
     </script>
+    
     <style>
-      body {
-        font-family: 'Amiri', serif;
-      }
-      h1, h2, h3, h4, h5, h6, button, a {
-        font-family: 'Cairo', 'sans-serif';
-      }
-      .loader {
-        width: 48px;
-        height: 48px;
-        border: 4px solid #14b8a6;
-        border-bottom-color: transparent;
-        border-radius: 50%;
-        display: inline-block;
-        box-sizing: border-box;
-        animation: rotation 1s linear infinite;
-      }
-      @keyframes rotation {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
+        :root {
+            --primary: #064e3b;
+            --secondary: #d97706;
+            --bg-body: #f8fafc;
+        }
+
+        body {
+            font-family: 'Amiri', serif;
+            background-color: var(--bg-body);
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            color: var(--primary);
+        }
+
+        .nav-logo {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--primary), #0d9488);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 10px rgba(6, 78, 59, 0.15);
+        }
+
+        .nav-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #064e3b;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .category-header {
+            background: linear-gradient(135deg, var(--primary), #0d9488);
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: 2rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            box-shadow: 0 10px 25px -5px rgba(6, 78, 59, 0.2);
+        }
+
+        .hadith-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hadith-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.05);
+            border-color: #cbd5e1;
+        }
+
+        .hadith-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+            opacity: 0.2;
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
 
-    <div id="app-container" class="max-w-5xl mx-auto p-4 md:p-6">
-         <header class="bg-white p-3 rounded-lg shadow-md border border-gray-200">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                     <button onclick="history.back()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm">
-                            عودة
-                     </button>
-                     <a href="/hadeth-o/index.html">
-                        <h1 class="text-lg md:text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors">موسوعة الحديث</h1>
-                     </a>
-                </div>
-                <button id="font-size-toggle" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors" aria-label="تغيير حجم الخط">
-                    <span>حجم الخط: 16</span>
-                </button>
-            </div>
-        </header>
+<body class="bg-gray-50">
 
-        <main id="main-content" class="mt-4">
-            <div id="loader" class="text-center p-8"><div class="loader mx-auto"></div></div>
-            <div id="error-message" class="hidden text-center text-red-500 bg-red-100 p-4 rounded-md"></div>
-        </main>
-    </div>
+    <!-- Premium Top Navigation -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">
+            <div class="nav-logo">م</div>
+            <div class="nav-title">موسوعة الأحاديث</div>
+        </a>
+        <div class="flex items-center gap-4">
+             <button id="font-size-toggle" class="bg-emerald-800 text-white px-4 py-2 rounded-full hover:bg-emerald-700 transition-colors text-sm font-bold font-cairo shadow-lg">
+                <span>حجم الخط: 16</span>
+            </button>
+            <button onclick="history.back()" class="bg-white text-emerald-800 border border-emerald-800 px-4 py-2 rounded-full hover:bg-emerald-50 transition-colors text-sm font-bold font-cairo">
+                عودة
+            </button>
+        </div>
+    </nav>
+
+    <main id="app-container" class="max-w-5xl mx-auto p-4 md:p-10">
+        <div id="loader" class="text-center p-20"><div class="loader mx-auto"></div></div>
+        <div id="error-message" class="hidden text-center text-red-600 bg-red-50 p-6 rounded-xl border border-red-100 font-bold"></div>
+        <div id="main-content"></div>
+    </main>
+
+    <footer class="mt-20 py-10 text-center border-t border-gray-200 bg-white">
+        <div class="text-emerald-800 font-extrabold font-cairo text-lg mb-2">موسوعة الأحاديث النبوية</div>
+        <p class="text-gray-400 text-sm">جميع الحقوق محفوظة © 2025</p>
+    </footer>
 
     <script type="module">
         const ORACLE_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN';
@@ -76,112 +176,87 @@
         const mainContent = document.getElementById('main-content');
         const loader = document.getElementById('loader');
         const errorMessage = document.getElementById('error-message');
+        const appContainer = document.getElementById('app-container');
 
-        // --- Helper Functions ---
-        function toggleLoader(show) {
-            loader.style.display = show ? 'block' : 'none';
-        }
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
+        // --- API Functions ---
+        async function getAhadithByCategory(categoryName) {
+            const response = await fetch(`${ORACLE_BASE_URL}/hadith/categories/${encodeURIComponent(categoryName)}`);
+            if (!response.ok) throw new Error('Failed to fetch data');
+            return (await response.json()).items;
         }
 
         function renderCategoryHadith(hadith) {
-            const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
+            const text = hadith.text || hadith.hadith_text || hadith.hadith;
             return `
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                     <p class="mb-4 leading-loose">${hadithText || '...'}</p>
-                    <div class="text-sm text-gray-500 border-t border-gray-100 pt-4 flex flex-wrap items-center gap-x-4 gap-y-1">
-                        <span class="inline-flex items-center"><strong class="font-bold text-gray-700 ml-1">المحدث:</strong> ${hadith.muhaddith || 'غير متوفر'}</span>
-                        <span class="inline-flex items-center"><strong class="font-bold text-gray-700 ml-1">المصدر:</strong> ${hadith.source || 'غير متوفر'}</span>
-                        <span class="inline-flex items-center"><strong class="font-bold text-gray-700 ml-1">الحكم:</strong> <span class="text-green-700 font-bold">${hadith.hukm || 'غير متوفر'}</span></span>
+                <div class="hadith-card group">
+                    <p class="mb-6 leading-loose text-2xl font-amiri text-slate-800">${text || '...'}</p>
+                    <div class="text-sm text-slate-500 border-t border-slate-50 pt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
+                        <span class="inline-flex items-center"><strong class="font-bold text-emerald-800 ml-1 font-cairo">المحدث:</strong> ${hadith.muhaddith || 'غير متوفر'}</span>
+                        <span class="inline-flex items-center"><strong class="font-bold text-emerald-800 ml-1 font-cairo">المصدر:</strong> ${hadith.source || 'غير متوفر'}</span>
+                        <span class="inline-flex items-center px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md"><strong class="font-bold ml-1 font-cairo">الحكم:</strong> ${hadith.hukm || 'غير متوفر'}</span>
                     </div>
-                    <div class="mt-4 text-left">
-                        <a href="/hadeth-o/details.html?id=${hadith.id}" class="text-teal-600 hover:text-teal-800 font-bold font-cairo">
-                            عرض التفاصيل الكاملة ←
+                    <div class="mt-8 text-left">
+                        <a href="details.html?id=${hadith.id}" class="inline-flex items-center gap-2 bg-emerald-800 text-white px-6 py-2 rounded-full hover:bg-emerald-700 transition-all font-bold font-cairo text-sm">
+                            عرض التفاصيل الكاملة &larr;
                         </a>
                     </div>
                 </div>
             `;
         }
-        
-        // --- API Functions ---
-        async function getAhadithByCategory(categoryName) {
-            const response = await fetch(`${ORACLE_BASE_URL}/hadith/categories/${encodeURIComponent(categoryName)}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch ahadith for category');
-            }
-            const data = await response.json();
-            return data.items;
-        };
-
 
         // --- Font Size Logic ---
         const fontSizes = [
-            { size: 16, class: 'text-base' },
-            { size: 18, class: 'text-lg' },
-            { size: 20, class: 'text-xl' },
-            { size: 24, class: 'text-2xl' },
+            { size: 16, class: 'text-base' }, { size: 18, class: 'text-lg' },
+            { size: 20, class: 'text-xl' }, { size: 24, class: 'text-2xl' },
         ];
         let currentFontSizeIndex = 0;
 
         function applyFontSize(index) {
-            const appContainer = document.getElementById('app-container');
-            const toggleButton = document.getElementById('font-size-toggle');
             fontSizes.forEach(fs => appContainer.classList.remove(fs.class));
             appContainer.classList.add(fontSizes[index].class);
-            toggleButton.querySelector('span').textContent = `حجم الخط: ${fontSizes[index].size}`;
+            document.getElementById('font-size-toggle').querySelector('span').textContent = `حجم الخط: ${fontSizes[index].size}`;
             localStorage.setItem('hadithAppFontSize', fontSizes[index].size.toString());
             currentFontSizeIndex = index;
         }
 
-        // --- Main Logic ---
         document.addEventListener('DOMContentLoaded', async () => {
-            // Font size initialization
             const savedSize = localStorage.getItem('hadithAppFontSize');
             const initialIndex = savedSize ? fontSizes.findIndex(fs => fs.size.toString() === savedSize) : 0;
             applyFontSize(initialIndex !== -1 ? initialIndex : 0);
             
-            document.getElementById('font-size-toggle').addEventListener('click', () => {
-                const nextIndex = (currentFontSizeIndex + 1) % fontSizes.length;
-                applyFontSize(nextIndex);
-            });
+            document.getElementById('font-size-toggle').onclick = () => applyFontSize((currentFontSizeIndex + 1) % fontSizes.length);
 
-            // Fetch data
-            const params = new URLSearchParams(window.location.search);
-            const categoryName = params.get('name');
-
+            const categoryName = new URLSearchParams(window.location.search).get('name');
             if (!categoryName) {
-                showError('لم يتم تحديد التصنيف.');
-                toggleLoader(false);
+                errorMessage.textContent = 'لم يتم تحديد التصنيف.';
+                errorMessage.classList.remove('hidden');
+                loader.style.display = 'none';
                 return;
             }
 
             try {
-                const ahadith = await getAhadithByCategory(decodeURIComponent(categoryName));
+                const ahadith = await getAhadithByCategory(categoryName);
                 
-                let contentHtml = `
-                    <h1 class="text-3xl font-bold font-cairo mb-6 border-b-2 border-teal-500 pb-3">
-                        تصنيف: ${decodeURIComponent(categoryName)}
-                    </h1>
+                let html = `
+                    <div class="category-header">
+                        <span class="text-sm font-bold font-cairo bg-white/20 px-4 py-1 rounded-full mb-4 inline-block">تصفح حسب التصنيف</span>
+                        <h1 class="text-4xl md:text-5xl font-extrabold font-cairo">${categoryName}</h1>
+                    </div>
                 `;
 
                 if (ahadith && ahadith.length > 0) {
-                    contentHtml += `<div class="space-y-4">${ahadith.map(renderCategoryHadith).join('')}</div>`;
+                    html += `<div class="space-y-6">${ahadith.map(renderCategoryHadith).join('')}</div>`;
                 } else {
-                    contentHtml += `<p class="text-center text-gray-500">لا توجد أحاديث في هذا التصنيف.</p>`;
+                    html += `<div class="bg-white p-12 rounded-3xl text-center text-slate-400 font-bold border border-slate-100">لا توجد أحاديث في هذا التصنيف حالياً.</div>`;
                 }
-                mainContent.innerHTML = contentHtml;
-                
+                mainContent.innerHTML = html;
             } catch (error) {
-                console.error(error);
-                showError('حدث خطأ أثناء جلب الأحاديث.');
+                errorMessage.textContent = 'حدث خطأ أثناء جلب البيانات.';
+                errorMessage.classList.remove('hidden');
             } finally {
-                toggleLoader(false);
+                loader.style.display = 'none';
             }
         });
-
     </script>
 </body>
 </html>

@@ -1,86 +1,223 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ديوان التراجم</title>
+    <title>ديوان التراجم - موسوعة الحديث</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@300;400;600;700;800&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              emerald: {
+                800: '#064e3b',
+              },
+              amber: {
+                600: '#d97706',
+              }
+            },
+            fontFamily: {
+              amiri: ['Amiri', 'serif'],
+              cairo: ['Cairo', 'sans-serif'],
+              scheherazade: ['Scheherazade New', 'serif'],
+            },
+          },
+        },
+      }
+    </script>
+    
     <style>
-      body {
-        font-family: 'Scheherazade New', 'Tahoma', serif;
-        background-color: #f8f9fa;
-      }
-      #main-content {
-        border-right: 1px solid #a7d7f9;
-        background-color: white;
-      }
-      #sidebar {
-        background-color: #f8f9fa;
-      }
-      .search-results-item a, .sidebar-link {
-        color: #0645ad;
-        text-decoration: none;
-      }
-      .search-results-item a:hover, .sidebar-link:hover {
-        text-decoration: underline;
-      }
-      .article-title {
-        border-bottom: 1px solid #e2e8f0;
-      }
+        :root {
+            --primary: #064e3b;
+            --secondary: #d97706;
+            --bg-body: #f8fafc;
+        }
+
+        body {
+            font-family: 'Amiri', serif;
+            background-color: var(--bg-body);
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            color: var(--primary);
+        }
+
+        .nav-logo {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--primary), #0d9488);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 10px rgba(6, 78, 59, 0.15);
+        }
+
+        .nav-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .search-container {
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            font-family: 'Amiri', serif;
+            font-size: 1.2rem;
+            outline: none;
+        }
+
+        .search-btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .search-btn:hover {
+            background: #0d9488;
+            transform: scale(1.05);
+        }
+
+        .sidebar-link {
+            display: block;
+            padding: 0.75rem 1.25rem;
+            color: #475569;
+            text-decoration: none;
+            border-radius: 0.75rem;
+            transition: all 0.2s;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 1px solid transparent;
+        }
+
+        .sidebar-link:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+            border-color: #e2e8f0;
+        }
+
+        .sidebar-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .article-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .article-title {
+            font-family: 'Cairo', sans-serif;
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div class="flex flex-col md:flex-row min-h-screen">
-        <!-- Sidebar -->
-        <aside id="sidebar" class="w-full md:w-64 p-4">
-            <div class="sticky top-4">
-                <div class="mb-6 text-center">
-                    <h1 class="text-2xl font-bold text-gray-800">ديوان التراجم</h1>
-                </div>
-                
-                <div class="mb-4">
-                    <div class="flex">
-                        <input
-                            type="text"
-                            id="searchInput"
-                            placeholder="ابحث في الديوان..."
-                            class="w-full p-2 text-base border border-gray-300 rounded-r-none rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        <button id="searchButton" class="px-4 py-2 bg-blue-500 text-white rounded-l-none rounded-r-md hover:bg-blue-600">
-                            بحث
-                        </button>
+
+<body class="bg-gray-50">
+
+    <!-- Premium Top Navigation -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">
+            <div class="nav-logo">م</div>
+            <div class="nav-title">موسوعة الأحاديث</div>
+        </a>
+        <div class="flex items-center gap-4">
+             <a href="index.html" class="text-emerald-800 font-bold font-cairo hover:text-emerald-600 transition-colors">العودة للبحث في الأحاديث</a>
+        </div>
+    </nav>
+
+    <main id="app-container" class="max-w-7xl mx-auto p-4 md:p-10">
+        <div class="flex flex-col lg:flex-row gap-10">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="w-full lg:w-80">
+                <div class="lg:sticky lg:top-24 space-y-8">
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                        <h1 class="text-xl font-bold font-cairo text-emerald-800 mb-6 flex items-center gap-2">
+                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path></svg>
+                             ديوان التراجم
+                        </h1>
+                        <div class="flex flex-col gap-2">
+                            <input type="text" id="searchInput" placeholder="ابحث عن اسم..." class="w-full p-4 text-base border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-emerald-500 font-amiri text-lg outline-none">
+                            <button id="searchButton" class="w-full mt-2 py-3 bg-emerald-800 text-white rounded-2xl font-bold font-cairo hover:bg-emerald-700 transition-all shadow-lg">ابحث في الديوان</button>
+                            <button id="randomArticleButton" class="w-full py-3 mt-2 bg-white text-emerald-800 border border-emerald-100 rounded-2xl font-bold font-cairo hover:bg-emerald-50 transition-all">شخصية عشوائية</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                        <h3 class="font-bold font-cairo text-slate-400 text-sm uppercase mb-6 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18 18.246 17.5 16.5 17.5c-1.75 0-3.168.477-4.5 1.253"></path></svg>
+                            هل تعلم عن...
+                        </h3>
+                        <ul id="random-list" class="space-y-1">
+                            <!-- JS Injected -->
+                        </ul>
                     </div>
                 </div>
+            </aside>
 
-                <nav>
-                    <ul>
-                        <li class="mb-2">
-                           <a href="#" id="randomArticleButton" class="sidebar-link">مقالة عشوائية</a>
-                        </li>
-                    </ul>
-                </nav>
-                
-                <div id="did-you-know" class="mt-6 border-t pt-4">
-                    <h3 class="font-semibold mb-2">هل تعلم...</h3>
-                    <ul id="random-list" class="list-disc pr-4 space-y-1">
-                       <!-- Random links will be inserted here -->
-                    </ul>
-                </div>
-            </div>
-        </aside>
+            <!-- Main Content -->
+            <main id="main-content" class="flex-1">
+                <p id="status" class="hidden text-center text-emerald-700 mb-8 py-3 px-6 bg-emerald-50 rounded-2xl border border-emerald-100 font-bold font-cairo animate-pulse"></p>
+                <div id="content-area"></div>
+            </main>
+        </div>
+    </main>
 
-        <!-- Main Content -->
-        <main id="main-content" class="flex-1 p-6 md:p-8 shadow-sm">
-            <p id="status" class="text-center text-gray-600 mb-6 py-2 px-4 bg-gray-100 rounded-md">جاري التهيئة...</p>
-            <div id="content-area">
-                <!-- Content will be dynamically inserted here -->
-            </div>
-        </main>
-    </div>
+    <footer class="mt-20 py-10 text-center border-t border-gray-200 bg-white">
+        <div class="text-emerald-800 font-extrabold font-cairo text-lg mb-2">موسوعة الأحاديث النبوية</div>
+        <p class="text-gray-400 text-sm">جميع الحقوق محفوظة © 2025</p>
+    </footer>
 
     <script>
         const INDEX_URL = 'https://pub-bace1fa10a7b49279accbb564511dbb5.r2.dev/index.json';
@@ -96,269 +233,95 @@
         let statusInterval = null;
         
         async function fetchWithRetry(url, options = {}) {
-            const { retries = 10, initialDelay = 1000, maxDelay = 30000, onRetry } = options;
+            const { retries = 5, initialDelay = 1000 } = options;
             let delay = initialDelay;
-
             for (let i = 0; i < retries; i++) {
                 try {
-                    // Force bypass of cache to prevent using a stale error response
                     const response = await fetch(url, { cache: 'no-store' });
-                    if (!response.ok) {
-                         throw new Error(`فشل الطلب: ${response.status} ${response.statusText}`);
-                    }
+                    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
                     return response;
                 } catch (error) {
-                    console.warn(`Attempt ${i + 1} failed: ${error.message}.`);
                     if (i < retries - 1) {
-                        if (onRetry) {
-                            onRetry(i + 1, retries);
-                        }
-                        const waitTime = Math.min(delay, maxDelay);
-                        console.warn(`Retrying in ${waitTime}ms...`);
-                        await new Promise(res => setTimeout(res, waitTime));
-                        delay *= 2; // Exponential backoff
-                    } else {
-                        throw new Error('فشل الاتصال بالخادم بعد عدة محاولات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
-                    }
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else throw error;
                 }
             }
         }
 
-        function showEngagingStatus(messages, element, interval = 1800) {
-            stopEngagingStatus(); // Clear any existing interval
-
-            let messageIndex = 0;
-            element.style.display = 'block';
-            element.className = 'text-center mb-6 py-2 px-4 rounded-md bg-blue-100 text-blue-700 animate-pulse'; 
-
-            const updateMessage = () => {
-                element.textContent = messages[messageIndex];
-                messageIndex = (messageIndex + 1) % messages.length;
-            };
-
-            updateMessage(); // Show the first message immediately
-            statusInterval = setInterval(updateMessage, interval);
-        }
-
-        function stopEngagingStatus() {
-            if (statusInterval) {
-                clearInterval(statusInterval);
-                statusInterval = null;
-            }
-        }
-
-        function setStatus(message, type = 'loading') {
-            stopEngagingStatus();
+        function setStatus(message, show = true) {
             statusElement.textContent = message;
-            statusElement.style.display = 'block';
-            statusElement.className = 'text-center mb-6 py-2 px-4 rounded-md ';
-            switch (type) {
-                case 'error':
-                    statusElement.classList.add('bg-red-100', 'text-red-700');
-                    break;
-                case 'success':
-                    statusElement.classList.add('bg-green-100', 'text-green-700');
-                    break;
-                case 'loading':
-                default:
-                    statusElement.classList.add('bg-blue-100', 'text-blue-700', 'animate-pulse');
-                    break;
-            }
+            statusElement.classList.toggle('hidden', !show);
         }
 
         async function fetchIndex() {
-            const loadingMessages = [
-                'جاري الاتصال بالخادم...',
-                'تأكيد الاتصال الآمن...',
-                'جلب فهرس الديوان الرئيسي...',
-                'تدقيق البيانات المستلمة...',
-                'تحضير الواجهة الرئيسية...'
-            ];
-            showEngagingStatus(loadingMessages, statusElement);
-            
+            setStatus('جاري تحميل فهرس ديوان التراجم...');
             try {
-                const response = await fetchWithRetry(INDEX_URL, { 
-                    onRetry: (attempt, maxRetries) => {
-                         console.warn(`Index fetch failed. Retrying... (${attempt}/${maxRetries})`);
-                    }
-                });
-                const data = await response.json();
-
-                if (!Array.isArray(data) || data.length === 0) {
-                    throw new Error('ملف الفهرس فارغ أو تالف.');
-                }
-                
-                indexData = data;
-                stopEngagingStatus();
-                setStatus('تم تحميل الفهرس بنجاح.', 'success');
-                setTimeout(() => { statusElement.style.display = 'none'; }, 2000);
-
+                const response = await fetchWithRetry(INDEX_URL);
+                indexData = await response.json();
+                setStatus('', false);
                 displayMainPage();
-
             } catch (error) {
-                console.error('Fetch Index error:', error);
-                stopEngagingStatus();
-                setStatus(`❌ خطأ في تحميل الفهرس: ${error.message}`, 'error');
+                setStatus(`خطأ: ${error.message}`, true);
+                statusElement.classList.replace('bg-emerald-50', 'bg-red-50');
+                statusElement.classList.replace('text-emerald-700', 'text-red-700');
             }
         }
 
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+        async function fetchAndDisplayArticle(itemId, chunkFile) {
+            contentArea.innerHTML = `<div class="p-20 text-center"><div class="w-12 h-12 border-4 border-emerald-800 border-t-transparent border-solid rounded-full animate-spin mx-auto"></div></div>`;
+            try {
+                const response = await fetchWithRetry(CHUNK_BASE_URL + chunkFile);
+                const chunk = await response.json();
+                const item = chunk.find(i => i.id === itemId);
+                
+                if (item) {
+                    const bios = [item.trj1, item.trj2, item.trj3, item.trj4].filter(t => t && t.trim()).map(t => `<p class="leading-loose text-2xl font-amiri text-slate-800">${t.replace(/([،.])/g, '$1\n')}</p>`).join('<hr class="my-10 border-slate-100">');
+                    contentArea.innerHTML = `
+                        <article class="article-card">
+                            <header class="mb-10 text-center pb-10 border-b border-slate-50">
+                                <span class="bg-amber-600 text-white px-4 py-1 rounded-full text-sm font-bold font-cairo mb-4 inline-block">ترجمة شخصية</span>
+                                <h1 class="article-title">${item.full || item.name}</h1>
+                                <p class="text-slate-400 font-bold font-cairo text-lg tracking-wide">${item.death || 'تاريخ الوفاة غير متوفر'}</p>
+                            </header>
+                            <div class="prose max-w-none">${bios || 'لا توجد تفاصيل حالياً.'}</div>
+                        </article>
+                    `;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } catch (error) {
+                contentArea.innerHTML = `<div class="p-10 bg-red-50 text-red-700 rounded-3xl text-center font-bold">خطأ في تحميل المقالة.</div>`;
             }
-            return array;
         }
 
         async function displayMainPage() {
-            contentArea.innerHTML = '';
-            randomList.innerHTML = '';
-
-            const randomItems = shuffleArray([...indexData]).slice(0, 10);
-            if (randomItems.length === 0) return;
-
-            const featuredItem = randomItems[0];
-            await fetchAndDisplayArticle(featuredItem.id, featuredItem.file);
-
-            randomItems.slice(1).forEach(item => {
-                const li = document.createElement('li');
-                const a = document.createElement('a');
-                a.href = '#';
-                a.className = 'sidebar-link';
-                a.textContent = item.name;
-                a.onclick = (e) => {
-                    e.preventDefault();
-                    fetchAndDisplayArticle(item.id, item.file);
-                };
-                li.appendChild(a);
-                randomList.appendChild(li);
-            });
-        }
-        
-        async function fetchAndDisplayArticle(itemId, chunkFile) {
-             const articleLoadingMessages = [
-                'جاري تحديد موقع السيرة...',
-                'استخلاص البيانات من الأرشيف...',
-                'تجميع معلومات الشخصية...',
-                'تنسيق النص للعرض...',
-                'اللمسات الأخيرة على المقالة...'
-            ];
-
-            contentArea.innerHTML = `<p id="article-status" class="text-blue-600 animate-pulse text-center"></p>`;
-            const articleStatusElement = document.getElementById('article-status');
-            showEngagingStatus(articleLoadingMessages, articleStatusElement, 1500);
-            
-            try {
-                const fullChunkUrl = CHUNK_BASE_URL + chunkFile;
-                const response = await fetchWithRetry(fullChunkUrl, {
-                     onRetry: (attempt, maxRetries) => {
-                        console.warn(`Article fetch failed. Retrying... (${attempt}/${maxRetries})`);
-                    }
-                });
-                const chunk = await response.json();
-
-                if (!Array.isArray(chunk)) {
-                    throw new Error('ملف البيانات المستلم تالف.');
-                }
-                
-                const fullItem = chunk.find(item => item.id === itemId);
-                
-                if (fullItem) {
-                    stopEngagingStatus();
-                    const biographies = [fullItem.trj1, fullItem.trj2, fullItem.trj3, fullItem.trj4]
-                        .filter(trj => trj && trj.trim() !== '');
-
-                    let biographyHTML = '';
-                    if (biographies.length > 0) {
-                        biographyHTML = biographies.map(trj => {
-                            const formattedTrj = trj.replace(/([،.])/g, '$1\n');
-                            return `<p style="white-space: pre-wrap;">${formattedTrj}</p>`;
-                        }).join('<hr class="my-6 border-gray-300">');
-                    } else {
-                        biographyHTML = '<p>لا توجد ترجمة متوفرة.</p>';
-                    }
-
-                    let articleHTML = `
-                        <header class="mb-4">
-                            <h1 class="text-4xl font-bold article-title pb-2">${fullItem.full || fullItem.name}</h1>
-                        </header>
-                        <div class="space-y-4">
-                            <p class="text-gray-500 text-xl">${fullItem.death || 'تاريخ الوفاة: غير متوفر'}</p>
-                            <div class="prose max-w-none text-2xl leading-relaxed text-gray-800">
-                                ${biographyHTML}
-                            </div>
-                        </div>
-                    `;
-                    contentArea.innerHTML = articleHTML;
-                } else {
-                    throw new Error('لم يتم العثور على التفاصيل في الجزء.');
-                }
-            } catch (error) {
-                stopEngagingStatus();
-                contentArea.innerHTML = `<p class="text-red-600 text-center">خطأ في تحميل المقالة: ${error.message}</p>`;
-                console.error('Fetch Article Error:', error);
-            }
+            if (indexData.length === 0) return;
+            const items = indexData.sort(() => 0.5 - Math.random()).slice(0, 8);
+            await fetchAndDisplayArticle(items[0].id, items[0].file);
+            randomList.innerHTML = items.slice(1).map(item => `
+                <li><a href="#" class="sidebar-link" onclick="fetchAndDisplayArticle(${item.id}, '${item.file}'); return false;">${item.name}</a></li>
+            `).join('');
         }
 
-        function search() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            if (!searchTerm) return;
+        searchButton.onclick = () => {
+            const query = searchInput.value.toLowerCase().trim();
+            if (!query) return;
+            const res = indexData.filter(i => i.name.toLowerCase().includes(query)).slice(0, 50);
+            contentArea.innerHTML = `
+                <div class="article-card">
+                    <h2 class="text-3xl font-bold font-cairo text-emerald-800 mb-8 border-b border-slate-50 pb-4">نتائج البحث عن: ${query}</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${res.map(i => `<a href="#" class="p-4 rounded-2xl border border-slate-100 hover:bg-emerald-50 hover:border-emerald-200 transition-all font-cairo font-bold text-slate-700" onclick="fetchAndDisplayArticle(${i.id}, '${i.file}'); return false;">${i.name}</a>`).join('')}
+                    </div>
+                </div>
+            `;
+        };
 
-            const filteredIndex = indexData.filter(item => 
-                item.name.toLowerCase().includes(searchTerm) || 
-                String(item.id).includes(searchTerm)
-            );
+        randomArticleButton.onclick = () => {
+             const i = indexData[Math.floor(Math.random() * indexData.length)];
+             fetchAndDisplayArticle(i.id, i.file);
+        };
 
-            renderSearchResults(filteredIndex, searchTerm);
-        }
-
-        function renderSearchResults(data, searchTerm) {
-            contentArea.innerHTML = '';
-            
-            const header = document.createElement('header');
-            header.className = 'mb-4';
-            header.innerHTML = `<h1 class="text-3xl font-bold article-title pb-2">نتائج البحث عن: "${searchTerm}"</h1>`;
-            contentArea.appendChild(header);
-
-            if (data.length === 0) {
-                contentArea.innerHTML += '<p class="text-gray-500">لا توجد نتائج مطابقة.</p>';
-                return;
-            }
-
-            const ul = document.createElement('ul');
-            ul.className = 'space-y-2';
-            data.slice(0, 100).forEach(item => { 
-                const li = document.createElement('li');
-                li.className = 'search-results-item text-xl';
-                const a = document.createElement('a');
-                a.href = '#';
-                a.textContent = `${item.name} (ID: ${item.id})`;
-                a.onclick = (e) => {
-                    e.preventDefault();
-                    fetchAndDisplayArticle(item.id, item.file);
-                };
-                li.appendChild(a);
-                ul.appendChild(li);
-            });
-            contentArea.appendChild(ul);
-        }
-        
-        // Event Listeners
-        searchButton.addEventListener('click', search);
-        searchInput.addEventListener('keyup', (event) => {
-            if (event.key === 'Enter') {
-                search();
-            }
-        });
-        randomArticleButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            if(indexData.length > 0) {
-                 const randomItem = indexData[Math.floor(Math.random() * indexData.length)];
-                 fetchAndDisplayArticle(randomItem.id, randomItem.file);
-            }
-        });
-
-        // Initial Load
         fetchIndex();
     </script>
 </body>

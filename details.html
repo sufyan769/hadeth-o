@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -8,67 +7,196 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@300;400;600;700;800&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            colors: {
+              emerald: {
+                50: '#ecfdf5',
+                100: '#d1fae5',
+                200: '#a7f3d0',
+                300: '#6ee7b7',
+                400: '#34d399',
+                500: '#10b981',
+                600: '#059669',
+                700: '#047857',
+                800: '#064e3b', // Primary
+                900: '#064e3b',
+              },
+              amber: {
+                500: '#f59e0b',
+                600: '#d97706', // Secondary
+              }
+            },
             fontFamily: {
               amiri: ['Amiri', 'serif'],
               cairo: ['Cairo', 'sans-serif'],
+              scheherazade: ['Scheherazade New', 'serif'],
             },
           },
         },
       }
     </script>
+    
     <style>
-      body {
-        font-family: 'Amiri', serif;
-      }
-      h1, h2, h3, h4, h5, h6, button, a {
-        font-family: 'Cairo', 'sans-serif';
-      }
-      .loader {
-        width: 48px;
-        height: 48px;
-        border: 4px solid #14b8a6;
-        border-bottom-color: transparent;
-        border-radius: 50%;
-        display: inline-block;
-        box-sizing: border-box;
-        animation: rotation 1s linear infinite;
-      }
-      @keyframes rotation {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
+        :root {
+            --primary: #064e3b;
+            --secondary: #d97706;
+            --bg-body: #f8fafc;
+        }
+
+        body {
+            font-family: 'Amiri', serif;
+            background-color: var(--bg-body);
+        }
+
+        /* Glass Navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            color: var(--primary);
+        }
+
+        .nav-logo {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--primary), #0d9488);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 10px rgba(6, 78, 59, 0.15);
+        }
+
+        .nav-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #064e3b;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hadith-text {
+            font-family: 'Scheherazade New', serif;
+            line-height: 2;
+            font-size: 1.8rem;
+            color: #1e293b;
+        }
+
+        .info-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .info-row:last-child { border-bottom: none; }
+
+        .info-label {
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.95rem;
+        }
+
+        .info-value {
+            color: #475569;
+            text-align: left;
+        }
+
+        .sharh-card {
+            background: #fff9f0;
+            border-right: 5px solid var(--secondary);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .sharh-title {
+            font-family: 'Cairo', sans-serif;
+            font-weight: 800;
+            color: var(--secondary);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
 
-    <div id="app-container" class="max-w-5xl mx-auto p-4 md:p-6">
-        <header class="bg-white p-3 rounded-lg shadow-md border border-gray-200">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                     <button onclick="history.back()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm">
-                            عودة
-                     </button>
-                     <a href="/hadeth-o/index.html">
-                        <h1 class="text-lg md:text-2xl font-bold text-gray-800 hover:text-teal-600 transition-colors">موسوعة الحديث</h1>
-                     </a>
-                </div>
-                <button id="font-size-toggle" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors" aria-label="تغيير حجم الخط">
-                    <span>حجم الخط: 16</span>
-                </button>
-            </div>
-        </header>
+<body class="bg-gray-50">
+
+    <!-- Premium Top Navigation -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">
+            <div class="nav-logo">م</div>
+            <div class="nav-title">موسوعة الأحاديث</div>
+        </a>
+        <div class="flex items-center gap-4">
+             <button id="font-size-toggle" class="bg-emerald-800 text-white px-4 py-2 rounded-full hover:bg-emerald-700 transition-colors text-sm font-bold font-cairo shadow-lg">
+                <span>حجم الخط: 16</span>
+            </button>
+            <button onclick="history.back()" class="bg-white text-emerald-800 border border-emerald-800 px-4 py-2 rounded-full hover:bg-emerald-50 transition-colors text-sm font-bold font-cairo">
+                عودة
+            </button>
+        </div>
+    </nav>
         
-        <main id="main-content" class="mt-4">
-            <div id="loader" class="text-center p-8"><div class="loader mx-auto"></div></div>
-            <div id="error-message" class="hidden text-center text-red-500 bg-red-100 p-4 rounded-md"></div>
-            <div id="details-container" class="hidden"></div>
-        </main>
-    </div>
+    <main id="app-container" class="max-w-6xl mx-auto p-4 md:p-10">
+        <div id="loader" class="text-center p-20"><div class="loader mx-auto"></div></div>
+        <div id="error-message" class="hidden text-center text-red-600 bg-red-50 p-6 rounded-xl border border-red-100 font-bold"></div>
+        
+        <div id="details-container" class="hidden">
+            <!-- Content injected via JS -->
+        </div>
+    </main>
+
+    <footer class="mt-20 py-10 text-center border-t border-gray-200 bg-white">
+        <div class="text-emerald-800 font-extrabold font-cairo text-lg mb-2">موسوعة الأحاديث النبوية</div>
+        <p class="text-gray-400 text-sm">جميع الحقوق محفوظة © 2025</p>
+    </footer>
 
     <script type="module">
         // --- API CONFIG ---
@@ -78,27 +206,14 @@
         const ALGOLIA_URL = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX_NAME}/query`;
         const ORACLE_BASE_URL = 'https://g85b062bd5c6cb1-fatwaproject.adb.me-dubai-1.oraclecloudapps.com/ords/SUFEAN';
 
-        // --- UI ELEMENTS ---
-        const mainContent = document.getElementById('main-content');
+        const mainContainer = document.getElementById('app-container');
         const loader = document.getElementById('loader');
         const errorMessage = document.getElementById('error-message');
         const detailsContainer = document.getElementById('details-container');
 
-        // --- STATE ---
         let hadithDetail = null;
         let similarAhadith = [];
 
-        // --- HELPER FUNCTIONS ---
-        function toggleLoader(show) {
-            loader.style.display = show ? 'block' : 'none';
-        }
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-        }
-
-        // --- API FUNCTIONS ---
         const algoliaHeaders = {
             'X-Algolia-Application-Id': ALGOLIA_APP_ID,
             'X-Algolia-API-Key': ALGOLIA_SEARCH_KEY,
@@ -114,12 +229,8 @@
 
         async function getHadithFromAlgolia(id) {
             const url = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX_NAME}/${id}`;
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: algoliaHeaders,
-            });
-            if (!response.ok) return null; // Gracefully handle not found
-            return await response.json();
+            const response = await fetch(url, { method: 'GET', headers: algoliaHeaders });
+            return response.ok ? await response.json() : null;
         }
 
         async function getSimilarAhadith(query, count = 5) {
@@ -129,12 +240,9 @@
                 headers: algoliaHeaders,
                 body: JSON.stringify(params),
             });
-            if (!response.ok) throw new Error('Failed to fetch similar ahadith');
-            const data = await response.json();
-            return data.hits;
+            return response.ok ? (await response.json()).hits : [];
         }
 
-        // --- RENDER FUNCTIONS ---
         function renderDetailsPage(hadith) {
             const hadithText = hadith.text || hadith.hadith_text || hadith.hadith;
             const explanation = [hadith.sharh1, hadith.sharh2, hadith.sharh3, hadith.sharh4, hadith.sharh5, hadith.sharh6]
@@ -142,150 +250,117 @@
             const categories = (typeof hadith.categories === 'string' ? hadith.categories.split('|') : [])
                 .map(c => c.trim()).filter(Boolean);
 
-
             detailsContainer.innerHTML = `
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="lg:col-span-2">
-                            <p class="leading-loose text-2xl mb-6 font-amiri" style="line-height: 2">${hadithText || '...'}</p>
-                            <div class="flex flex-wrap gap-2 mb-8">
-                                <button id="copy-btn" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors">نسخ</button>
-                                <button id="search-similar-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">بحث عن المشابه</button>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                    <div class="lg:col-span-2">
+                        <div class="bg-white p-8 md:p-12 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-2 h-full bg-emerald-800"></div>
+                            <p class="hadith-text mb-10">${hadithText || '...'}</p>
+                            
+                            <div class="flex flex-wrap gap-3 mb-12">
+                                <button id="copy-btn" class="bg-emerald-800 text-white px-6 py-2.5 rounded-full hover:bg-emerald-700 transition-all font-bold font-cairo shadow-md flex items-center gap-2">
+                                    <span>نسخ النص</span>
+                                </button>
+                                <button id="search-similar-btn" class="bg-white text-emerald-800 border border-emerald-100 px-6 py-2.5 rounded-full hover:bg-gray-50 transition-all font-bold font-cairo">
+                                    بحث عن روايات مشابهة
+                                </button>
                             </div>
+
                             ${explanation ? `
-                                <div class="mt-8">
-                                    <h2 class="text-2xl font-bold font-cairo border-b-2 border-teal-500 pb-2 mb-4">الشرح والتفسير</h2>
-                                    <div class="prose max-w-none leading-relaxed">${explanation}</div>
+                                <div class="sharh-card">
+                                    <h2 class="sharh-title">الشرح والبيان</h2>
+                                    <div class="prose max-w-none leading-loose text-xl text-slate-800 font-amiri">${explanation}</div>
                                 </div>` : ''}
                         </div>
-                        <div class="lg:col-span-1">
-                             <div class="bg-gray-100 border border-gray-200 rounded-lg p-4 lg:sticky lg:top-24">
-                                <h2 class="text-xl font-bold font-cairo border-b-2 border-teal-500 pb-2 mb-4">بطاقة الحديث</h2>
-                                <dl>
-                                    ${renderInfoRow("الراوي", hadith.rawi)}
-                                    ${renderInfoRow("المحدث", hadith.muhaddith)}
-                                    ${renderInfoRow("المصدر", hadith.source)}
-                                    ${renderInfoRow("الصفحة/الرقم", hadith.page_number)}
-                                    ${renderInfoRow("الحكم", hadith.hukm)}
-                                    ${renderInfoRow("التخريج", hadith.takhrij)}
-                                </dl>
+                    </div>
+
+                    <div class="lg:col-span-1">
+                         <div class="info-card lg:sticky lg:top-24">
+                            <h2 class="text-xl font-bold font-cairo text-emerald-800 border-b border-emerald-50 pb-4 mb-6 flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path></svg>
+                                بطاقة المخرج
+                            </h2>
+                            <div class="space-y-1">
+                                ${renderInfoRow("الراوي", hadith.rawi)}
+                                ${renderInfoRow("المحدث", hadith.muhaddith)}
+                                ${renderInfoRow("المصدر", hadith.source)}
+                                ${renderInfoRow("الصفحة/الرقم", hadith.page_number)}
+                                ${renderInfoRow("الحكم", hadith.hukm)}
+                                ${renderInfoRow("التخريج", hadith.takhrij)}
                             </div>
+
+                            ${categories.length > 0 ? `
+                                <div class="mt-8 pt-6 border-t border-gray-100">
+                                    <h3 class="text-sm font-bold font-cairo text-slate-400 mb-4 uppercase tracking-wider">التصنيفات</h3>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${categories.map(cat => `<a href="category.html?name=${encodeURIComponent(cat)}" class="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-bold font-cairo">${cat}</a>`).join('')}
+                                    </div>
+                                </div>` : ''}
                         </div>
                     </div>
-                    ${categories.length > 0 ? `
-                        <div class="mt-8 pt-6 border-t border-gray-200">
-                            <h3 class="text-xl font-bold font-cairo mb-3">تصنيفات</h3>
-                            <div class="flex flex-wrap gap-2">
-                                ${categories.map(cat => `<a href="/hadeth-o/category.html?name=${encodeURIComponent(cat)}" class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">${cat}</a>`).join('')}
-                            </div>
-                        </div>` : ''}
-                    <div id="similar-section" class="mt-8 pt-6 border-t border-gray-200"></div>
                 </div>
+
+                <div id="similar-section" class="mt-16 pt-10 border-t border-gray-100"></div>
             `;
             attachActionListeners();
-            detailsContainer.style.display = 'block';
+            detailsContainer.classList.remove('hidden');
         }
         
         function renderInfoRow(label, value) {
             if (!value) return '';
             return `
-                <div class="flex justify-between border-b border-gray-200 py-2">
-                    <dt class="font-bold text-gray-800">${label}</dt>
-                    <dd class="text-gray-600 text-left">${value}</dd>
+                <div class="info-row">
+                    <span class="info-label">${label}</span>
+                    <span class="info-value font-amiri font-bold">${value}</span>
                 </div>
             `;
         }
 
         function renderSimilarSection(similar) {
-             const similarSection = document.getElementById('similar-section');
-             if (!similarSection || similar.length === 0) return;
+             const section = document.getElementById('similar-section');
+             if (!section || similar.length === 0) return;
 
-             similarSection.innerHTML = `
-                <h2 class="text-2xl font-bold font-cairo mb-4">أحاديث ذات صلة</h2>
-                <ul class="list-disc pr-5 space-y-2 mb-4">
+             section.innerHTML = `
+                <h2 class="text-2xl font-bold font-cairo text-emerald-800 mb-8">أحاديث ذات صلة</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     ${similar.map(s => {
                         const text = s.text || s.hadith_text || s.hadith || '';
-                        return `<li><a href="/hadeth-o/details.html?id=${s.objectID}" class="text-teal-600 hover:underline">${text.substring(0, 100)}...</a></li>`
+                        return `
+                            <a href="details.html?id=${s.objectID}" class="block bg-white p-6 rounded-2xl border border-gray-100 hover:shadow-md transition-all group">
+                                <p class="line-clamp-3 text-slate-700 font-amiri text-lg group-hover:text-emerald-800 leading-relaxed">${text}...</p>
+                                <div class="mt-4 text-emerald-600 text-sm font-bold font-cairo">تحميل الرواية الكاملة &larr;</div>
+                            </a>
+                        `
                     }).join('')}
-                </ul>
-                <button id="show-full-similar-btn" class="bg-teal-100 text-teal-800 px-4 py-2 rounded-md hover:bg-teal-200 transition-colors disabled:opacity-50">
-                    عرض كل الروايات المشابهة
-                </button>
-                <div id="full-similar-container" class="mt-6 space-y-6"></div>
+                </div>
              `;
-             document.getElementById('show-full-similar-btn').addEventListener('click', handleShowFullSimilar);
         }
         
-        function renderFullSimilar(fullSimilarList) {
-            const container = document.getElementById('full-similar-container');
-            container.innerHTML = fullSimilarList.map(full => {
-                const hadithText = full.text || full.hadith_text || full.hadith;
-                return `
-                <div class="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                     <p class="leading-relaxed mb-3">${hadithText || '...'}</p>
-                     <div class="text-sm text-gray-500">
-                        <p><span class="font-bold text-gray-700">المصدر:</span> ${full.source}</p>
-                        <p><span class="font-bold text-gray-700">الحكم:</span> <span class="text-green-700 font-bold">${full.hukm}</span></p>
-                     </div>
-                 </div>
-            `}).join('');
-            document.getElementById('show-full-similar-btn').style.display = 'none';
-        }
-
-        // --- EVENT HANDLERS ---
         function attachActionListeners() {
-            document.getElementById('copy-btn').addEventListener('click', handleCopy);
-            document.getElementById('search-similar-btn').addEventListener('click', handleSearchSimilar);
+            document.getElementById('copy-btn').onclick = handleCopy;
+            document.getElementById('search-similar-btn').onclick = handleSearchSimilar;
         }
 
         function handleCopy() {
             const btn = document.getElementById('copy-btn');
-            if (!hadithDetail) return;
             const hadithText = hadithDetail.text || hadithDetail.hadith_text || hadithDetail.hadith;
             const sharh = [hadithDetail.sharh1, hadithDetail.sharh2, hadithDetail.sharh3, hadithDetail.sharh4, hadithDetail.sharh5, hadithDetail.sharh6]
                 .filter(Boolean).join('\n\n');
-            const textToCopy = `
-نص الحديث:
-${hadithText}
----
-الراوي: ${hadithDetail.rawi}
-المحدث: ${hadithDetail.muhaddith}
-المصدر: ${hadithDetail.source}
-الصفحة/الرقم: ${hadithDetail.page_number}
-الحكم: ${hadithDetail.hukm}
-التخريج: ${hadithDetail.takhrij}
----
-الشرح:
-${sharh || 'لا يوجد شرح متاح.'}
-            `.trim();
+            const textToCopy = `نص الحديث:\n${hadithText}\n\nالراوي: ${hadithDetail.rawi}\nالمحدث: ${hadithDetail.muhaddith}\nالمصدر: ${hadithDetail.source}\nالحكم: ${hadithDetail.hukm}\n\nالشرح:\n${sharh || 'لا يوجد شرح متاح.'}`;
             navigator.clipboard.writeText(textToCopy).then(() => {
-                btn.textContent = 'تم النسخ!';
-                setTimeout(() => { btn.textContent = 'نسخ'; }, 2000);
+                const inner = btn.querySelector('span');
+                const oldText = inner.textContent;
+                inner.textContent = 'تم النسخ!';
+                setTimeout(() => { inner.textContent = oldText; }, 2000);
             });
         }
         
         function handleSearchSimilar() {
-            if (!hadithDetail) return;
             const hadithText = hadithDetail.text || hadithDetail.hadith_text || hadithDetail.hadith;
-            // Take the first 15 words for the search query to avoid long URL issues.
-            const searchQuery = hadithText.split(' ').slice(0, 15).join(' ');
-            window.location.href = `/hadeth-o/index.html?query=${encodeURIComponent(searchQuery)}`;
+            const searchQuery = hadithText.split(' ').slice(0, 10).join(' ');
+            window.location.href = `index.html?query=${encodeURIComponent(searchQuery)}`;
         }
 
-        async function handleShowFullSimilar() {
-            const btn = document.getElementById('show-full-similar-btn');
-            btn.disabled = true;
-            btn.textContent = 'جاري التحميل...';
-            try {
-                const detailsPromises = similarAhadith.map(h => getHadithDetails(h.objectID));
-                const details = await Promise.all(detailsPromises);
-                renderFullSimilar(details.filter(Boolean));
-            } catch (error) {
-                console.error("Failed to fetch full similar details:", error);
-                btn.textContent = 'حدث خطأ';
-            }
-        }
-        
         // --- FONT SIZE LOGIC ---
         const fontSizes = [
             { size: 16, class: 'text-base' }, { size: 18, class: 'text-lg' },
@@ -294,90 +369,53 @@ ${sharh || 'لا يوجد شرح متاح.'}
         let currentFontSizeIndex = 0;
 
         function applyFontSize(index) {
-            const appContainer = document.getElementById('app-container');
-            const toggleButton = document.getElementById('font-size-toggle');
-            fontSizes.forEach(fs => appContainer.classList.remove(fs.class));
-            appContainer.classList.add(fontSizes[index].class);
-            toggleButton.querySelector('span').textContent = `حجم الخط: ${fontSizes[index].size}`;
+            fontSizes.forEach(fs => mainContainer.classList.remove(fs.class));
+            mainContainer.classList.add(fontSizes[index].class);
+            document.getElementById('font-size-toggle').querySelector('span').textContent = `حجم الخط: ${fontSizes[index].size}`;
             localStorage.setItem('hadithAppFontSize', fontSizes[index].size.toString());
             currentFontSizeIndex = index;
         }
 
-        // --- MAIN INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', async () => {
             const savedSize = localStorage.getItem('hadithAppFontSize');
             const initialIndex = savedSize ? fontSizes.findIndex(fs => fs.size.toString() === savedSize) : 0;
             applyFontSize(initialIndex !== -1 ? initialIndex : 0);
-            document.getElementById('font-size-toggle').addEventListener('click', () => {
-                const nextIndex = (currentFontSizeIndex + 1) % fontSizes.length;
-                applyFontSize(nextIndex);
-            });
+            document.getElementById('font-size-toggle').onclick = () => applyFontSize((currentFontSizeIndex + 1) % fontSizes.length);
 
-            const params = new URLSearchParams(window.location.search);
-            const hadithId = params.get('id');
+            const hadithId = new URLSearchParams(window.location.search).get('id');
             if (!hadithId) {
-                showError('لم يتم تحديد معرّف الحديث.');
-                toggleLoader(false);
+                errorMessage.textContent = 'لم يتم تحديد معرّف الحديث.';
+                errorMessage.classList.remove('hidden');
+                loader.style.display = 'none';
                 return;
             }
 
             try {
                 const [oracleResult, algoliaResult] = await Promise.all([
-                    getHadithDetails(hadithId).catch(e => { console.error("Oracle fetch failed:", e); return null; }),
-                    getHadithFromAlgolia(hadithId).catch(e => { console.error("Algolia fetch failed:", e); return null; })
+                    getHadithDetails(hadithId).catch(() => null),
+                    getHadithFromAlgolia(hadithId).catch(() => null)
                 ]);
 
                 if (!oracleResult && !algoliaResult) {
-                    showError('لم يتم العثور على الحديث.');
-                    toggleLoader(false);
-                    return;
-                }
-
-                hadithDetail = {
-                    ...(oracleResult || {}),
-                    ...(algoliaResult || {}),
-                    text: oracleResult?.text || algoliaResult?.text,
-                    rawi: algoliaResult?.rawi || oracleResult?.rawi,
-                    muhaddith: algoliaResult?.muhaddith || oracleResult?.muhaddith,
-                    hukm: algoliaResult?.hukm || oracleResult?.hukm,
-                    source: algoliaResult?.source || oracleResult?.source,
-                };
-                
-                const hadithText = hadithDetail.text;
-
-                if (hadithText) {
-                    renderDetailsPage(hadithDetail);
-                    document.title = `${hadithText.substring(0, 50)}... - موسوعة الحديث`;
-
-                    // Fetch similar in background, but don't let it break the page
-                    (async () => {
-                        try {
-                            const similarData = await getSimilarAhadith(hadithText, 6);
-                            const currentHadithId = algoliaResult?.objectID || oracleResult?.id;
-                            if (Array.isArray(similarData)) {
-                                similarAhadith = similarData.filter(h => h.objectID != currentHadithId).slice(0, 5);
-                                if (similarAhadith.length > 0) {
-                                    renderSimilarSection(similarAhadith);
-                                }
-                            }
-                        } catch (error) {
-                            console.error('Could not load similar ahadith:', error);
-                            const similarSection = document.getElementById('similar-section');
-                            if (similarSection) similarSection.style.display = 'none';
-                        }
-                    })();
-
+                    errorMessage.textContent = 'لم يتم العثور على الحديث في قواعد البيانات.';
+                    errorMessage.classList.remove('hidden');
                 } else {
-                    showError('نص الحديث غير متوفر.');
+                    hadithDetail = { ...(oracleResult || {}), ...(algoliaResult || {}) };
+                    renderDetailsPage(hadithDetail);
+                    if (hadithDetail.text) {
+                        getSimilarAhadith(hadithDetail.text, 5).then(res => {
+                            similarAhadith = res.filter(h => h.objectID != (algoliaResult?.objectID || hadithId));
+                            renderSimilarSection(similarAhadith);
+                        });
+                    }
                 }
             } catch (error) {
-                console.error("Main page load error:", error);
-                showError('حدث خطأ أثناء جلب تفاصيل الحديث.');
+                errorMessage.textContent = 'حدث خطأ غير متوقع.';
+                errorMessage.classList.remove('hidden');
             } finally {
-                toggleLoader(false);
+                loader.style.display = 'none';
             }
         });
     </script>
-
 </body>
 </html>
