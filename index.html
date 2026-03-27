@@ -556,7 +556,7 @@
                 <ul style="list-style: none; font-size: 0.9rem; color: var(--text-muted); line-height: 2;">
                     <li><a href="https://sufyan769.github.io/tarajum/firebase.html" style="text-decoration: none; color: inherit;">🔗 تراجم فايربيز</a></li>
                     <li><a href="https://sufyan769.github.io/hadeth/index1.html" style="text-decoration: none; color: inherit;">📚 المكتبة الحديثية</a></li>
-                    <li><a href="https://fatawa-seo-eanp.vercel.app" style="text-decoration: none; color: inherit;">⏳ موسوعة البيان </a></li>
+                    <li><a href="https://sufyan769.github.io/tarajim-data/#" style="text-decoration: none; color: inherit;">⏳ تاريخ الاسلام</a></li>
                 </ul>
             </div>
             <div>
@@ -717,11 +717,44 @@
         }
 
         // --- Core Functions ---
-        function loadRandomHadiths() {
-            const randomPage = Math.floor(Math.random() * 50);
-            index.search('', { page: randomPage, hitsPerPage: 10 }).then(({ hits }) => {
-                fetchAndRender(hits, containers.random, true);
-            });
+        async function loadRandomHadiths() {
+            const container = containers.random;
+            container.innerHTML = '<div class="loader-wrapper"><span class="loader"></span></div>';
+
+            // Try multiple strategies to get random hits
+            const trySearch = async (query = '') => {
+                try {
+                    const result = await index.search(query, { hitsPerPage: 10 });
+                    if (result.hits && result.hits.length > 0) {
+                        const maxPage = Math.min(result.nbPages || 1, 20);
+                        const randomPage = Math.floor(Math.random() * maxPage);
+                        if (randomPage === 0) return result.hits;
+                        const finalResult = await index.search(query, { page: randomPage, hitsPerPage: 10 });
+                        return finalResult.hits.length > 0 ? finalResult.hits : result.hits;
+                    }
+                } catch (e) { console.error("Search try failed", e); }
+                return null;
+            };
+
+            // Strategy 1: Empty search
+            let hits = await trySearch('');
+            
+            // Strategy 2: Common terms if empty failed
+            if (!hits || hits.length === 0) {
+                const commonTerms = ['قال', 'رسول', 'الله', 'عن', 'نبي'];
+                hits = await trySearch(commonTerms[Math.floor(Math.random() * commonTerms.length)]);
+            }
+
+            if (hits && hits.length > 0) {
+                fetchAndRender(hits, container, true);
+            } else {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:3rem; color:var(--text-muted);">
+                        <p>نعتذر، واجهنا صعوبة في تحميل المختارات حالياً.</p>
+                        <button onclick="loadRandomHadiths()" class="wiki-btn" style="margin-top:1rem; padding:0.5rem 1rem; font-size:0.9rem;">إعادة المحاولة</button>
+                    </div>
+                `;
+            }
         }
 
         window.openDetail = async function (id) {
