@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>تفاصيل الحديث - موسوعة الحديث</title>
+    <title id="page-title">تفاصيل الحديث - موسوعة الحديث</title>
+    <meta name="description" id="meta-desc" content="استكشف تفاصيل وشروحات الأحاديث النبوية الشريفة في موسوعة الحديث الشاملة.">
+    <link rel="canonical" id="canonical-url" href="https://sufyan769.github.io/hadeth-o/details.html">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -401,6 +404,13 @@
                     errorMessage.classList.remove('hidden');
                 } else {
                     hadithDetail = { ...(oracleResult || {}), ...(algoliaResult || {}) };
+                    
+                    // Update SEO Metadata
+                    const snippet = (hadithDetail.text || "").substring(0, 150) + "...";
+                    document.title = (hadithDetail.source || "حديث") + " - موسوعة الحديث";
+                    document.getElementById('meta-desc').content = snippet;
+                    document.getElementById('canonical-url').href = `https://sufyan769.github.io/hadeth-o/details.html?id=${hadithId}`;
+
                     renderDetailsPage(hadithDetail);
                     if (hadithDetail.text) {
                         getSimilarAhadith(hadithDetail.text, 5).then(res => {

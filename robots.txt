@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sufyan769.github.io/hadeth-o/sitemap.xml
